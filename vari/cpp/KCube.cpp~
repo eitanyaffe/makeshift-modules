@@ -1,0 +1,22 @@
+void KCube::read_fastq(string fn)
+{
+}
+
+void KCube::read(string fn)
+{
+}
+
+void KCube::write(string fn)
+{
+}
+
+void KCube::add_count(Kmer kmer)
+{
+  m_counts[kmer.to_index()]++;
+}
+
+int KCube::get_count(Kmer kmer)
+{
+  return (m_counts[kmer.to_index()]);
+}
+

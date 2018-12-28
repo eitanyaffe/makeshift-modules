@@ -1,0 +1,59 @@
+#####################################################################################################
+# register module
+#####################################################################################################
+
+units:=init.mk
+$(call _register_module,init,$(units),,)
+
+#####################################################################################################
+# Catalog
+#####################################################################################################
+
+CATALOG_ID?=Nielsen
+OMIT_MGS?=F
+
+# input genes and associated CAGs
+CATALOG_INPUT_GENES?=$(CATALOG_INPUT_DIR)/CAG_map
+
+# sequence of CAGs
+CATALOG_INPUT_FILES?=$(CATALOG_INPUT_DIR)/files
+
+# CAG-CAG dependency table
+CATALOG_INPUT_DEPEND_TABLE?=$(CATALOG_INPUT_DIR)/CAG_depend
+
+# catalog directory
+CATALOG_DIR?=$(OUTPUT_DIR)/$(CATALOG_ID)
+
+# united fasta file
+CATALOG_FASTA?=$(CATALOG_DIR)/catalog.fasta
+
+# map from gene to entity (CAG)
+CATALOG_GENE_TABLE?=$(CATALOG_DIR)/gene_table
+
+#####################################################################################################
+# CAG tables
+#####################################################################################################
+
+SMALL_CAG_TABLE?=$(CURDIR)/input/CAG/small_CAG_table
+CAG_DIR?=$(OUTPUT_DIR)/CAG
+MIN_PREVALENCE?=90
+CAG_SAMPLE_COUNT?=396
+
+CAG_SELECTED?=$(CAG_DIR)/cag_selected
+GENE_SELECTED?=$(CAG_DIR)/gene_selected
+
+#####################################################################################################
+# uncompress raw reads
+#####################################################################################################
+
+POP_LABEL?=short
+
+# all output for lib under this directory
+LIBRARY_DIR?=$(OUTPUT_DIR)/input
+
+# number of unique subjects
+LIB_COUNT?=10
+
+# table with all library names
+LIB_TABLE?=$(LIBRARY_DIR)/lib_table_$(POP_LABEL)
+LIB_ID?=SRR513378

@@ -1,0 +1,15 @@
+CUBE_SFILES=$(addprefix $(_md)/cpp/,make_cube.cpp Params.cpp Params.h util.cpp util.h)
+$(eval $(call bin_rule2,make_cube,$(CUBE_SFILES)))
+MAKECUBE_BIN=$(_md)/bin.$(shell hostname)/make_cube
+
+init_cube: $(MAKECUBE_BIN)
+
+CUBE_DONE?=$(CUBE_DIR)/.done_cube
+$(CUBE_DONE):
+	$(call _start,$(CUBE_DIR))
+	$(MAKECUBE_BIN) \
+		-ifn $(CUBE_FASTA_INPUT_FILE) \
+		-ksize $(CUBE_KSIZE) \
+		-ofn $(CUBE_FILE)
+	$(_end_touch)
+make_cube: $(CUBE_DONE)

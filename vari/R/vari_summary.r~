@@ -1,0 +1,19 @@
+vari.summary=function(ifn.table, field, idir, snp.percent.threshold, snp.count.threshold, ofn)
+{
+    table = load.table(ifn.table)
+    table$item = table[,field]
+    items = table$item
+    result = NULL
+    cat(sprintf("going over %d items\n", length(items)))
+    for (item in items) {
+        length = table$length[match(item,table$item)]
+        df = data.frame(item=item, length=length)
+        poly = read.delim(paste(idir, "/", item, ".poly", sep=""))
+        cov = read.delim(paste(idir, "/", item, ".cov", sep=""), header=F)[,1]
+        poly$snp.called = poly$percent >= 100*snp.percent.threshold & poly$percent <= 100*(1-snp.percent.threshold) & poly$count >= snp.count.threshold
+        df[,paste("mean_xcoverage", type, sep="_")] = mean(cov)
+        df[,paste("snp_count", type, sep="_")] = sum(poly$snp.called)
+        result = rbind(result, df)
+    }
+    save.table(result, ofn)
+}

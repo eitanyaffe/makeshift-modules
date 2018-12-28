@@ -1,0 +1,216 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <map>
+#include <set>
+#include <fstream>
+#include <assert.h>
+#include <sstream>
+#include <stdarg.h>
+#include <cmath>
+
+#include <algorithm>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include <ctime>
+#include <unordered_map>
+
+#include "Kmer.h"
+
+using namespace std;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Parsing and handling user arguments
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+class UserParams {
+public:
+  string ifn, ofn;
+  int ksize;
+};
+
+void usage(const char* name, UserParams& params)
+{
+  fprintf(stderr, "usage: %s [options]\n", name);
+  cout << " -ifn <fn>: input fasta" << endl;
+  cout << " -ksize <int>: kmer size" << endl;
+  cout << " -ofn <fn>: output table" << endl;
+  exit(1);
+}
+
+void parse_user_arguments(int argc, char **argv, UserParams& params)
+{
+  if (argc == 1)
+    usage(argv[0], params);
+
+  int i = 1;
+  while (i < argc)
+    {
+      string option = argv[i];
+      char* arg = argv[i+1];
+
+      if (option == "-ifn")
+	params.ifn = arg;
+      else if (option == "-ofn")
+	params.ofn = arg;
+      else if (option == "-ksize")
+	params.ksize = atoi(arg);
+      else {
+	cout << "Error: unknown option: " << option << endl;
+	exit(1);
+      }
+
+      i += 2;
+    }
+}
+
+ifstream::pos_type filesize(string filename)
+{
+    ifstream in(filename.c_str(), std::ifstream::ate | std::ifstream::binary);
+    return in.tellg();
+}
+
+void append_kmers(string seq, int ksize, map<Kmer, int>& multi)
+{
+  if (seq.length() == 0)
+    return;
+  int N = seq.length() - ksize;
+  if (N < 0)
+    return;
+  for (int i=0; i<=N; ++i) {
+    string sseq = seq.substr(i,ksize);
+    if (sseq.find("N") != string::npos)
+      continue;
+    Kmer kmer(sseq);
+    if (multi.find(kmer) == multi.end())
+      multi[kmer] = 1;
+    else
+      multi[kmer]++;
+  }
+}
+
+// generate k-mer table
+void first_pass(string ifn, int ksize, map<Kmer, int>& multi)
+{
+  ifstream in(ifn.c_str());
+  massert(in.is_open(), "could not open file %s", ifn.c_str());
+
+  string seq = "";
+  int seq_length = 0;
+  while(!in.eof()) {
+    string line;
+    getline(in, line);
+    if (line.size() == 0)
+      continue;
+    if (line.substr(0,1) == ">") {
+      append_kmers(seq, ksize, multi);
+      append_kmers(reverse_complement(seq), ksize, multi);
+      seq = "";
+    } else {
+      seq += line;
+      seq_length += line.length();
+    }
+  }
+  append_kmers(seq, ksize, multi);
+
+  cout << "total sequence length: " << seq_length << endl;
+  in.close();
+}
+
+void find_repeats(string id, string seq, int ksize, map<Kmer, int>& multi, map<string, vector < pair<int,int> > >& segments)
+{
+  if (seq.length() == 0)
+    return;
+  int N = seq.length() - ksize;
+  if (N < 0)
+    return;
+  bool inside = false;
+  int start = 0, end = 0;
+  for (int i=0; i<=N; ++i) {
+    string sseq = seq.substr(i,ksize);
+    if (sseq.find("N") != string::npos)
+      continue;
+    Kmer kmer(sseq);
+    massert(multi.find(kmer) != multi.end(), "kmer not found: seq=%s, index=%d, id=%s", seq.substr(i,ksize).c_str(), i, id.c_str());
+    bool found = multi[kmer] > 1;
+    // cout << "i=" << i+1 << " found=" << found << " inside=" << inside << endl;
+    if (found && !inside) {
+      start = i;
+      inside = true;
+      // cout << "new segment, start=" << start << endl;
+    } else if (!found && inside) {
+      end = i;
+      // cout << "end segment, start=" << start << " end=" << end << endl;
+      segments[id].push_back(make_pair(start+1,end+1));
+      inside = false;
+    }
+  }
+  if (inside)
+    segments[id].push_back(make_pair(start+1,N+2));
+}
+
+// generate non-unique table
+void second_pass(string ifn, int ksize, map<Kmer, int>& multi, map<string, vector < pair<int,int> > >& segments)
+{
+  ifstream in(ifn.c_str());
+  massert(in.is_open(), "could not open file %s", ifn.c_str());
+
+  string seq = "";
+  string id = "";
+  while(!in.eof()) {
+    string line;
+    getline(in, line);
+    if (line.size() == 0)
+      continue;
+    // cout << "line: " << line << endl;
+    if (line.substr(0,1) == ">") {
+      if (id != "")
+	find_repeats(id, seq, ksize, multi, segments);
+      seq = "";
+      id = line.substr(1,string::npos);
+    } else {
+      seq += line;
+    }
+  }
+  find_repeats(id, seq, ksize, multi, segments);
+
+  in.close();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Main
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+int main(int argc, char **argv)
+{
+  UserParams params;
+  parse_user_arguments(argc, argv, params);
+  Kmer::set_k(params.ksize);
+
+  map<Kmer, int> multi;
+  cout << "reading assembly: " << params.ifn << endl;
+  first_pass(params.ifn, params.ksize, multi);
+  cout << "number of unique kmers: " << multi.size() << endl;
+
+  map<string, vector < pair<int,int> > > segments;
+  second_pass(params.ifn, params.ksize, multi, segments);
+
+  cout << "saving table: " << params.ofn << endl;
+  ofstream out(params.ofn.c_str());
+  massert(out.is_open(), "could not open file %s", params.ofn.c_str());
+  out << "index\tstart\tend" << endl;
+  for (map<string, vector < pair<int,int> > >::iterator it = segments.begin(); it !=  segments.end(); ++it) {
+    string id = (*it).first;
+    vector < pair<int,int> >& vec = (*it).second;
+    for (unsigned int i=0; i<vec.size(); ++i) {
+      int start = vec[i].first;
+      int end = vec[i].second;
+      out << id << "\t" << start << " \t" << end << endl;
+    }
+  }
+  out.close();
+
+  return (0);
+}

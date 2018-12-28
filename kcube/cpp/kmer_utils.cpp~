@@ -1,0 +1,38 @@
+#include <stdlib.h>
+#include <iostream>
+
+#include "kmer_utils.h"
+using namespace std;
+
+char base2char(int base) {
+  base &= 3;
+  switch (base) {
+  case 0: return('A');
+  case 1: return('C');
+  case 2: return('G');
+  case 3: return('T');
+  default: return('N');
+  }
+}
+
+index_t kmer2index_str(string kmer)
+{
+  index_t result = 0;
+  for (unsigned int i=0; i<kmer.size(); ++i) {
+    index_t base = char2base(kmer[i]);
+    result |= base << i*2;
+  }
+  return (result);
+}
+
+string index2kmer(index_t index, int ksize)
+{
+  string kmer;
+  kmer.resize(ksize);
+  for (unsigned int i=0; i<kmer.size(); ++i) {
+    int base = index & 3;
+    kmer[i] = base2char(base);
+    index = index >> 2;
+  }
+  return (kmer);
+}

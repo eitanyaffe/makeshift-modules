@@ -1,0 +1,97 @@
+var.bin.cov=function(cov, bin.data)
+{
+    map = bin.data$map
+    if (length(cov) != dim(map)[1])
+        stop("coverage profile not dense")
+    ss = sapply(split(cov, map$bin), sum)
+    result = data.frame(bin=bin.data$bins, start=(bin.data$bins-1)*bin.data$bin.size+1, end=bin.data$bins * bin.data$bin.size)
+
+    ix = match(bin.data$bins, names(ss))
+    result$count = ifelse(!is.na(ix), ss, 0)
+    result
+}
+
+var.bin.poly=function(poly, bin.data)
+{
+    map = bin.data$map
+    poly = poly[poly$type == "snp",]
+    poly$bin = map$bin[match(poly$coord, map$coords)]
+    ss = sapply(split(poly, poly$bin), function(x) { sum(x$snp.called) })
+    result = data.frame(bin=bin.data$bins, start=(bin.data$bins-1)*bin.data$bin.size+1, end=bin.data$bins * bin.data$bin.size)
+
+    ix = match(bin.data$bins, names(ss))
+    result$snp.density = ifelse(!is.na(ix), ss[ix] / bin.data$bin.size, 0)
+    result
+}
+
+get.bin.data=function(bin.size, length)
+{
+    nbins = ceiling(length/bin.size)
+    cov.binned = vector("numeric", nbins)
+    df = data.frame(coords=1:length)
+    df$bin = floor((df$coord-1) / bin.size) + 1
+    list(map=df, nbins=nbins, bins=1:nbins, bin.size=bin.size)
+}
+
+vari.bin=function(ifn.table, field, dir.full, dir.clipped, bin.sizes, snp.percent.threshold, snp.count.threshold)
+{
+    dirs = list(full=dir.full, clipped=dir.clipped)
+    table = load.table(ifn.table)
+    table$item = table[,field]
+    items = table$item
+    for (item in items) {
+        for (i in 1:length(dirs)) {
+            type = names(dirs)[i]
+            dir = dirs[i]
+            length = table$length[match(item,table$item)]
+            # cat(sprintf("loading %s tables for item %s\n", type, item))
+            poly = read.delim(paste(dir, "/", item, ".poly", sep=""))
+            cov = read.delim(paste(dir, "/", item, ".cov", sep=""), header=F)[,1]
+            poly$snp.called = poly$percent >= 100*snp.percent.threshold & poly$percent <= 100*(1-snp.percent.threshold) & poly$count >= snp.count.threshold
+
+            for (bin.size in bin.sizes) {
+                odir = paste(dir,"/binsize_", bin.size, sep="")
+                # cat(sprintf("binning profiles, binsize=%d, odir=%s\n", bin.size, odir))
+                if (system(paste("mkdir -p", odir)) != 0)
+                    stop(sprintf("cannot create directory: %s\n", odir))
+
+                bin.data = get.bin.data(bin.size=bin.size, length=length)
+
+                # coverage
+                ofn = paste(odir, "/", item, ".cov", sep="")
+                cov.binned = var.bin.cov(cov=cov, bin.data=bin.data)
+                write.table(cov.binned, ofn, quote=F, sep="\t")
+
+                # poly
+                ofn = paste(odir, "/", item, ".poly", sep="")
+                poly.binned = var.bin.poly(poly=poly, bin.data=bin.data)
+                write.table(poly.binned, ofn, quote=F, sep="\t")
+            }
+        }
+    }
+}
+
+vari.summary=function(ifn.table, field, dir.full, dir.clipped, snp.percent.threshold, snp.count.threshold, ofn)
+{
+    dirs = list(full=dir.full, clipped=dir.clipped)
+    table = load.table(ifn.table)
+    table$item = table[,field]
+    items = table$item
+    result = NULL
+    cat(sprintf("going over %d items\n", length(items)))
+    for (item in items) {
+        length = table$length[match(item,table$item)]
+        df = data.frame(item=item, length=length)
+        for (i in 1:length(dirs)) {
+            type = names(dirs)[i]
+            dir = dirs[i]
+            poly = read.delim(paste(dir, "/", item, ".poly", sep=""))
+            cov = read.delim(paste(dir, "/", item, ".cov", sep=""), header=F)[,1]
+            poly$snp.called = poly$percent >= 100*snp.percent.threshold & poly$percent <= 100*(1-snp.percent.threshold) & poly$count >= snp.count.threshold
+            df[,paste("mean_xcoverage", type, sep="_")] = mean(cov)
+            df[,paste("snp_count", type, sep="_")] = sum(poly$snp.called)
+        }
+        result = rbind(result, df)
+    }
+    save.table(result, ofn)
+}

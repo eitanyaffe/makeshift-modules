@@ -1,0 +1,11 @@
+simulate=function(seed=1)
+{
+    set.seed(seed)
+    N= 1000
+
+    # reference
+    ref = floor(runif(N, min=1, max=5))
+    ref[ref>4] = 4
+    ref[ref<1] = 1
+}
+

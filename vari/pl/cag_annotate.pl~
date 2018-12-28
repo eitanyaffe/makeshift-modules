@@ -1,0 +1,91 @@
+#!/usr/bin/env perl
+
+use strict;
+use POSIX;
+use warnings FATAL => qw(all);
+use File::Basename;
+
+if ($#ARGV == -1) {
+	print STDERR "usage: $0 <input genes> <ifn> <ofn> <explode dir> <label>\n";
+	exit 1;
+}
+
+my $map = $ARGV[0];
+my $ifn = $ARGV[1];
+my $ofn = $ARGV[2];
+my $odir = $ARGV[3];
+my $label = $ARGV[4];
+
+###############################################################################################
+# read gene map
+###############################################################################################
+
+my %genes;
+print "reading gene file: $map\n";
+open(IN, $map) || die $map;
+my $header = <IN>;
+my %h = parse_header($header);
+while (my $line = <IN>) {
+    chomp $line;
+    my @f = split("\t", $line);
+    my $gene = $f[$h{gene}];
+    my $cag = $f[$h{set}];
+    $genes{$gene} = $cag;
+}
+close(IN);
+
+###############################################################################################
+# go over all cags
+###############################################################################################
+
+
+print "reading file: $ifn\n";
+open(IN, $ifn) || die $ifn;
+$header = <IN>;
+%h = parse_header($header);
+chomp($header);
+
+print "Generating file: $ofn\n";
+open(OUT, ">", $ofn) || die $ofn;
+print OUT $header, "\tcag\n";
+
+my $prev_cag = "";
+while (my $line = <IN>) {
+    chomp($line);
+    my @f = split("\t", $line);
+    my $gene = $f[$h{contig}];
+    defined($genes{$gene}) or die;
+    my $cag = $genes{$gene};
+
+    if ($prev_cag ne $cag) {
+	close(OUT_CAG) if ($prev_cag ne "");
+	my $odir_cag = $odir."/".$cag;
+	system("mkdir -p ".$odir_cag);
+	my $ofn_cag = $odir_cag."/".$label;
+	open(OUT_CAG, ">", $ofn_cag) || die $ofn_cag;
+	print OUT_CAG $header, "\tcag\n";
+    }
+    $prev_cag = $cag;
+    print OUT $line, "\t", $cag, "\n";
+    print OUT_CAG $line, "\t", $cag, "\n";
+}
+close(IN);
+close(OUT);
+close(OUT_CAG);
+
+######################################################################################################
+# Subroutines
+######################################################################################################
+
+
+sub parse_header
+{
+	my ($header) = @_;
+	chomp($header);
+	my @f = split("\t", $header);
+	my %result;
+	for (my $i = 0; $i <= $#f; $i++) {
+		$result{$f[$i]} = $i;
+	}
+	return %result;
+}

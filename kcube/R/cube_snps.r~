@@ -1,0 +1,2 @@
+make.snp.table=function(ifn, base.dir, ksize, ofn) {
+}

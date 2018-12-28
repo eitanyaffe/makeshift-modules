@@ -1,0 +1,15 @@
+
+export_table:
+	$(call _start,$(EXPORT_DIR))
+	$(_R) R/export.r export.table \
+		ofn=$(EXPORT_TABLE) \
+		$(call _export_variable,$(EXPORT_VARIALBES))
+	$(_end)
+
+export_files:
+	$(call _start,$(EXPORT_ODIR))
+	$(_R) R/export.r export \
+		odir=$(EXPORT_ODIR) \
+		$(call _export_variable,$(EXPORT_VARIALBES))
+	tar cvf $(EXPORT_ODIR_TAR) $(EXPORT_ODIR)
+	$(_end)

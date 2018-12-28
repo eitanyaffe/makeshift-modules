@@ -1,0 +1,37 @@
+#ifndef KMERUTILS_H
+#define KMERUTILS_H
+
+#include <vector>
+#include <string>
+using namespace std;
+
+typedef long long int index_t;
+
+char base2char(int base);
+
+index_t kmer2index_str(string kmer);
+string index2kmer(index_t index, int ksize);
+
+inline char nt_complement(char c)
+{
+  switch(c) {
+  case 'A': return('T');
+  case 'G': return('C');
+  case 'C': return('G');
+  case 'T': return('A');
+  default: return(c);
+  }
+}
+
+index_t kmer2index(vector<index_t>& bases, int start, int ksize) {
+  index_t result = 0;
+  for (int i=0; i<ksize; ++i) {
+    index_t base = bases[start+i];
+    if (base == -1)
+      return (-1);
+    result |= base << i*2;
+  }
+  return (result);
+}
+
+#endif

@@ -1,0 +1,7 @@
+
+compute.contig.variation=function(ifn, assembly.dir, ids, map.tag, ofn)
+{
+    options(stringsAsFactors=F)
+    contigs = load.table(ifn)
+    ttables = paste(assembly.dir, "/datasets/", ids, "/map_", map.tag, "/var_contig_summary", sep="")
+}

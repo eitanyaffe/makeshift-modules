@@ -1,0 +1,13 @@
+# compute variance over selected catalog genes
+CUBE_UNITED_LIB_DONE?=$(UNITED_LIB_DIR)/.done_$(UNITED_LIB_ID)
+$(CUBE_UNITED_LIB_DONE):
+	$(call _start,$(UNITED_LIB_DIR))
+	$(_Rcall) $(CURDIR) $(_md)/R/unite_libs.r unite.libs \
+		ifn.hmp=$(HMP_LIB_TABLE) \
+		field.hmp=$(HMP_LIB_TABLE_FIELD) \
+		ifn.ebi=$(EBI_LIB_TABLE) \
+		field.ebi=$(EBI_LIB_TABLE_FIELD) \
+		ofn=$(UNITED_LIB_TABLE)
+	$(_end_touch)
+cube_unite: $(CUBE_UNITED_LIB_DONE)
+
