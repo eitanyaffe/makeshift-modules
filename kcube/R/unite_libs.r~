@@ -1,9 +1,0 @@
-unite.libs=function(ifn.hmp, field.hmp, ifn.ebi, field.ebi, ofn)
-{
-    hmp = load.table(ifn.hmp)
-    hmp$id = hmp[,field.hmp]
-    ebi = load.table(ifn.ebi)
-    ebi$id = ebi[,field.ebi]
-    result = data.frame(id=c(hmp$id, ebi$id))
-    save.table(result, ofn)
-}

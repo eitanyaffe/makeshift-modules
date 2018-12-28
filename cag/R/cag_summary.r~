@@ -1,6 +1,0 @@
-cag.summary=function(ifn.cag.table, ifn.genes, ifn.kcube.summary, ofn)
-{
-    cag.table = load.table(ifn.cag.table)
-    genes = load.table(ifn.genes)
-    mat = load.table(ifn.kcube.summary)
-}
