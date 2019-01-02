@@ -176,6 +176,9 @@ $(CA_ANCHOR_GENES): $(CA_ANCHOR_CONTIGS)
 
 make_ca: $(CA_INTER_ANCHOR_MATRIX) $(CA_ANCHOR_GENES)
 
+# only contigs, no genes
+make_ca_basic: $(CA_INTER_ANCHOR_MATRIX) $(CA_ANCHOR_CONTIGS)
+
 ########################################################################################################################
 # plots
 ########################################################################################################################
