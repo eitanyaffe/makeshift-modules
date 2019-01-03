@@ -46,3 +46,9 @@ EXPORT_TABLE?=$(ANCHOR_EXPORT_DIR)/table_selected
 # copy files, for export to other machine
 EXPORT_ODIR?=$(ANCHOR_EXPORT_DIR)/files
 EXPORT_ODIR_TAR?=$(ANCHOR_EXPORT_DIR)/files.tar.gz
+
+#####################################################################################################
+# flat structure, used by the hpipe wrapper
+#####################################################################################################
+
+FLAT_DIR?=$(OUTDIR)/result
