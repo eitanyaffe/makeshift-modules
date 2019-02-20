@@ -2,7 +2,7 @@
 # register module
 #####################################################################################################
 
-units=export.mk
+units=export.mk export_poly.mk
 $(call _register_module,export,$(units),)
 
 #####################################################################################################
@@ -22,12 +22,13 @@ CONTIG_TABLE_FILTERED CONTIG_MATRIX_FILTERED CCLUSTER_CONTIGS \
 INITIAL_ANCHOR_TABLE ANCHOR_TABLE ANCHOR_COVERAGE_TABLE ANCHOR_GC_TABLE ANCHOR_MATRIX_TABLE ANCHOR_INFO_TABLE \
 CA_ANCHOR_CONTIGS \
 ANCHOR_CLUSTER_TABLE \
-POLY_10Y_DIR POLY_CURRENT_DIR RESFAMS_TABLE_SELECTED \
+POLY_10Y_DIR POLY_POST_DIR POLY_CURRENT_DIR RESFAMS_TABLE_SELECTED \
 SC_GENE_TABLE \
 KCUBE_BASE_DIR \
 SC_CORE_TABLE SC_CORE_GENES \
 SC_ELEMENT_TABLE SC_GENE_ELEMENT SC_ELEMENT_ANCHOR \
-EVO_ELEMENT_FATE_CLASS_10Y EVO_ELEMENT_TABLE_CURRENT
+EVO_ELEMENT_FATE_CLASS_10Y EVO_ELEMENT_TABLE_CURRENT EVO_CORE_LIVE_CLASS EVO_CORE_FATE_CLASS_10Y \
+EVO_CORE_FATE_DETAILED_POST EVO_ELEMENT_FATE_CLASS_POST
 
 EXPORT_VARIALBES_NOEVAL?=
 
@@ -47,8 +48,12 @@ EXPORT_TABLE?=$(ANCHOR_EXPORT_DIR)/table_selected
 EXPORT_ODIR?=$(ANCHOR_EXPORT_DIR)/files
 EXPORT_ODIR_TAR?=$(ANCHOR_EXPORT_DIR)/files.tar.gz
 
+
+POLY_EXPORT_DIR?=$(ANCHOR_EXPORT_DIR)/poly
+
 #####################################################################################################
 # flat structure, used by the hpipe wrapper
 #####################################################################################################
 
 FLAT_DIR?=$(OUTDIR)/result
+

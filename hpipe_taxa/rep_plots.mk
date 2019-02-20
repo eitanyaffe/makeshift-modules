@@ -1,7 +1,7 @@
 
 copy_taxa_table:
-	mkdir -p $(TAXA_FDIR)
-	cp $(SC_SUMMARY_UNIQUE) $(SET_TAXA_REPS) $(TAXA_FDIR)
+	mkdir -p $(TAXA_FDIR)/0_tables
+	cp $(SC_ELEMENT_ANCHOR) $(SC_GENE_ELEMENT) $(SC_ELEMENT_GENE_TABLE) $(SC_SUMMARY_UNIQUE) $(SET_TAXA_REPS) $(TAXA_FDIR)/0_tables
 
 plot_taxa_uniref:
 	$(_R) R/plot_taxa.r plot.uniref.summary \
@@ -187,6 +187,13 @@ plot_cell_factors:
 		factors.ifn=$(FINAL_CELLULAR_MODEL_PREFIX)_anchor.f \
 		fdir=$(TAXA_FDIR)/cell_factors
 
+# core/anchor comparison
+plot_anchor_vs_core:
+	$(_R) R/plot_anchor_vs_core.r plot.avsc \
+		anchor.ifn=$(CA_ANCHOR_GENES) \
+		core.ifn=$(SC_CORE_GENES) \
+		fdir=$(TAXA_FDIR)/anchor_vs_core
+
 make_taxa_plots: \
 	copy_taxa_table plot_taxa_uniref plot_taxa_path \
 	plot_taxa_trees \
@@ -199,7 +206,8 @@ make_taxa_plots: \
 	plot_taxa_resolve_barplot plot_taxa_resolve_details plot_taxa_ref_details \
 	plot_cell_factors \
 	plot_taxa_source_breakdown plot_taxa_accessory_matrix \
-	plot_sg_hic_compare
+	plot_sg_hic_compare \
+	plot_anchor_vs_core
 
 ###########################################################
 # obsolete
