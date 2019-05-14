@@ -4,7 +4,7 @@
 
 name:=taxa
 units:=taxa.mk seq_compare.mk rep_plots.mk GO.mk
-preq_variables:=CA_ANCHOR_GENES GENE_REF_ID DATASET_ANCHOR_DIR MAP_FIGURE_DIR
+preq_variables:=CA_ANCHOR_GENES GENE_REF_ID DATASET_ANCHOR_DIR
 $(call _register_module,taxa,$(units),anchors,$(preq_variables))
 
 ###########################################################
@@ -50,6 +50,12 @@ TAXA_SELECT_RATIO_12?=0.3
 ###########################################################
 # output params
 ###########################################################
+
+# NCBI files, downloaded from ftp://ftp.ncbi.nlm.nih.gov/genomes/ASSEMBLY_REPORTS/
+# First line (which has an #) was removed manually
+GENEBANK_VERSION?=May_2018
+GENEBANK_DIR?=/relman01/shared/databases/NCBI/Genomes/$(GENEBANK_VERSION)
+GENEBANK_TABLE?=$(GENEBANK_DIR)/assembly_summary_genbank.txt.2
 
 TAXA_VER?=v1
 # TAXA_ID?=genebank_$(GENEBANK_VERSION)_uniref_$(GENE_REF_ID)_taxonomy_$(NCBI_TAX_ID)_maskCAG_$(CAG_MASK)
@@ -185,7 +191,7 @@ SC_READ_INPUT_TAG?=$(SC_READ_STEP)_$(SC_READ_INPUT_MAX_COUNT)
 
 # breakdown input into fragments
 SC_FRAGMENT_DIR?=$(SC_DIR)/fragment
-SC_FRAGMENT_MAX_JOBS?=20
+SC_FRAGMENT_MAX_JOBS?=5
 SC_FRAGMENT_QSUB?=$(SC_QSUB)/fragment
 SC_READ_FRAGMENT_DIR?=$(SC_FRAGMENT_DIR)/reads_$(SC_READ_INPUT_TAG)
 

@@ -27,6 +27,11 @@ FENDS_MIN_RELATIVE_ABUNDANCE?=-2
 
 FENDS_COVERAGE?=$(FENDS_DIR)/$(CUTTER_TITLE).coverage
 
+# support a fixed reference fend table, used when comparing conditions
+FENDS_USE_REF?=F
+FENDS_REF_ID?=pre_lib_hic_u_simple
+FENDS_REF_COVERAGE?=$(call reval,FENDS_COVERAGE,LIB_ID=$(FENDS_REF_ID))
+
 CONTIG_FENDS_SUMMARY?=$(FENDS_DIR)/contig_summary.$(CUTTER_TITLE)
 
 MAT_DIR?=$(CONTIG_MATRIX_DIR)/mat
@@ -63,6 +68,9 @@ BIAS_BREAKS="-3 -1 0 1 3"
 
 # use the initial contig clustering
 INIT_MDL_ANCHORS?=$(INITIAL_ANCHOR_TABLE)
+
+INIT_MDL_ANCHOR_KEY?=contig
+INIT_MDL_ANCHOR_VALUE?=cluster
 
 # table with model parameters
 INIT_MDL_MFN?=$(CURDIR)/input/models/abun_len.mdl
@@ -104,8 +112,8 @@ ifeq ($(MDL_STAGE),initial)
 ####################################
 
 MDL_ANCHORS=$(INIT_MDL_ANCHORS)
-MDL_ANCHOR_KEY=contig
-MDL_ANCHOR_VALUE=cluster
+MDL_ANCHOR_KEY=$(INIT_MDL_ANCHOR_KEY)
+MDL_ANCHOR_VALUE=$(INIT_MDL_ANCHOR_VALUE)
 MDL_MFN=$(INIT_MDL_MFN)
 
 MDL_SCOPE=inter_anchor
@@ -184,6 +192,9 @@ AMAP_OUT_DIR?=$(DATASET_ANCHOR_DIR)/trim_anchors/model_$(MDL_VERSION)
 # fend table and observed fend pairs
 AMAP_IN_FENDS?=$(ABUNDANCE_BINNED_FENDS)
 AMAP_IN_MAT?=$(MAT_FILE)
+
+AMAP_IN_CLUSTER_TABLE?=$(INITIAL_ANCHOR_TABLE)
+AMAP_IN_CLUSTER_FIELD?=cluster
 
 # model (for expected)
 AMAP_IN_MODEL_PREFIX?=$(INIT_MODEL_PREFIX)
@@ -297,16 +308,26 @@ GROUP_FDIR?=$(ANCHOR_FIGURE_DIR)/groups
 #####################################################################################################
 
 # output dir
-# set in response_int.mk:
-# EE_MAP_IN_TABLE: input table
+# set in core_response_int.mk:
+# EE_MAP_DATASET: the hi-c map id
+# EE_MAP_IN_TABLE: input table (set/contig/start/end)
 # EE_MAP_DIR: output dir
 
-EE_MAP_IN_MODEL_PREFIX=$(FINAL_MODEL_PREFIX)
+EE_MAP_DATASET?=$(LIB_ID)
+EE_MAP_IN_MODEL_PREFIX=$(call reval,FINAL_MODEL_PREFIX,LIB_ID=$(EE_MAP_DATASET))
+EE_MAP_IN_MODEL_CELL_PREFIX=$(call reval,FINAL_CELLULAR_MODEL_PREFIX,LIB_ID=$(EE_MAP_DATASET))
+EE_MAP_IN_MAT?=$(call reval,MAT_FILE,LIB_ID=$(EE_MAP_DATASET))
+
 EE_MAP_IN_FENDS=$(EE_MAP_IN_MODEL_PREFIX).binned
-EE_MAP_IN_MAT?=$(MAT_FILE)
 EE_MAP_IN_MFN=$(FINAL_MDL_MFN)
+EE_MAP_IN_CELL_MFN=$(FINAL_CELLULAR_MDL_MFN)
+
+# anchored/inter_anchor/intra_anchor/all
+EE_MAP_SCOPE?=anchored
 
 EE_MAP_NUM_SPLIT?=80
+
+EE_MATRIX?=$(EE_MAP_DIR)/result
 
 #####################################################################################################
 # anchor info

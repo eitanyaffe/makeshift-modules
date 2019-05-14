@@ -32,14 +32,17 @@ GENE_FASTA_NT?=$(PREDICT_DIR)/proteins_nt
 #####################################################################################################
 
 # GO table from http://purl.obolibrary.org/obo/go/go-basic.obo
-GO_BASIC_OBO?=/relman01/shared/databases/GO/go-basic.obo-2016-11-08
+GO_OBO_ID?=2016-11-08
+GO_BASIC_OBO?=/relman01/shared/databases/GO/go-basic.obo-$(GO_OBO_ID)
 
 # UniProt to GO: ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/UNIPROT/goa_uniprot_all.gaf.gz
-GOA_UNIPROT_TABLE?=/relman01/shared/databases/GO/goa_uniprot/2016-10-29/goa_uniprot_all.gaf
-UNIPROT2GO_LOOKUP?=/relman01/shared/databases/GO/goa_uniprot/2016-10-29/goa_uniprot_all.gaf.parsed
+GOA_UNIPROT_ID?=2016-10-29
+GOA_UNIPROT_TABLE?=/relman01/shared/databases/GO/goa_uniprot/$(GOA_UNIPROT_ID)/goa_uniprot_all.gaf
+UNIPROT2GO_LOOKUP?=/relman01/shared/databases/GO/goa_uniprot/$(GOA_UNIPROT_ID)/goa_uniprot_all.gaf.parsed
 
 # UniParc table: ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/uniparc/uniparc_all.xml.gz
-UNIPARC_XML_IFN?=/relman03/work/users/eitany/uniparc_all.xml
+UNIPARC_ID?=Nov_2016
+UNIPARC_XML_IFN?=/relman03/work/users/eitany/uniparc/$(UNIPARC_ID)/uniparc_all.xml
 
 GO_ID?=2016_10
 GO_DIR?=$(BASE_OUTDIR)/GO/$(GO_ID)
@@ -53,17 +56,20 @@ UNIPARC2UNIPROT_LOOKUP?=$(GO_DIR)/uniparc2uniprot_lookup
 #####################################################################################################
 
 # UniRef from ftp://ftp.uniprot.org/pub/databases/uniprot/uniref
-GENE_REF_ID=uniref100_2018_02
-UNIREF_INPUT_DIR?=/relman01/shared/databases/UniRef100/2018_02
+GENE_REF_ID?=uniref100_2018_02
+UNIREF_INPUT_DIR?=/relman01/shared/databases/UniRef100/$(GENE_REF_ID)
 GENE_REF_IFN?=$(UNIREF_INPUT_DIR)/uniref100.fasta
 GENE_REF_XML_IFN=$(UNIREF_INPUT_DIR)/uniref100.xml
 
 # UniProt from ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz
-UNIPROT_XML_IFN?=/relman01/shared/databases/UniProt/versions/2016_10/uniprot_sprot.xml
+UNIPROT_ID?=2016_10
+UNIPROT_XML_IFN?=/relman01/shared/databases/UniProt/versions/$(UNIPROT_ID)/uniprot_sprot.xml
 
 # uniref table
-UNIREF_TABLE_BASE_DIR?=$(UNIREF_INPUT_DIR)/files
-UNIREF_TABLE_DIR?=$(UNIREF_TABLE_BASE_DIR)/$(GENE_REF_ID)
+# UNIREF_TABLE_BASE_DIR?=$(UNIREF_INPUT_DIR)/files
+# UNIREF_TABLE_DIR?=$(UNIREF_TABLE_BASE_DIR)/$(GENE_REF_ID)
+# UNIREF_TABLE_DIR?=$(UNIREF_TABLE_BASE_DIR)/$(GENE_REF_ID)
+UNIREF_TABLE_DIR?=$(UNIREF_INPUT_DIR)/files
 UNIREF_TABLE?=$(UNIREF_TABLE_DIR)/table
 UNIREF_GENE_TABLE?=$(UNIREF_TABLE_DIR)/genes
 

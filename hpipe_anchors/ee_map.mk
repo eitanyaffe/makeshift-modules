@@ -53,7 +53,6 @@ EE_QSUB_DIR?=$(QSUB_DIR)/datasets/$(DATASET)/ee_map
 EE_TMP_CONTIG_DIR?=$(EE_QSUB_DIR)/contig_tmp
 EE_LOG_CONTIG_DIR?=$(EE_QSUB_DIR)/contig_log
 
-# MODEL_INTEGRATE_BINARY?=$(_md)/bin/model_integrate
 MODEL_INTEGRATE_BINARY?=$(_md)/bin.$(_binary_suffix)/model_integrate
 
 # expected counts
@@ -66,9 +65,10 @@ $(EE_MAP_EXPECTED): $(EE_MAP_BINNED)
 		   log.dir=$(EE_LOG_CONTIG_DIR) \
 		   wd=$(_md) \
 	           model.prefix=$(EE_MAP_IN_MODEL_PREFIX) \
+	           model.prefix.cell=$(EE_MAP_IN_MODEL_CELL_PREFIX) \
 	           fends.ifn=$(EE_MAP_BINNED) \
 	  	   model.ifn=$(EE_MAP_IN_MFN) \
-		   scope=anchored model=std \
+		   scope=$(EE_MAP_SCOPE) model=std \
 	           ofields.x=cluster_bin ofields.y=cluster_bin omit.x.zero=F omit.y.zero=F \
 	  	   num.splits=$(EE_MAP_NUM_SPLIT) max.jobs.fn=$(MAX_JOBS_FN) req.mem=2000 dtype=$(DTYPE) \
 		   Rcall="$(_Rcall)" \
@@ -76,16 +76,19 @@ $(EE_MAP_EXPECTED): $(EE_MAP_BINNED)
 	$(_end)
 ee_exp: $(EE_MAP_EXPECTED)
 
+# possibily add here: cellular expected
+
 ########################################################################################################################
 # gene / contig / anchor map
 ########################################################################################################################
 
-$(EE_MATRIX): $(EE_MAP_OBSERVED) $(EE_MAP_EXPECTED)
+EE_MAP_DONE?=$(EE_MAP_DIR)/.done_ee_map
+$(EE_MAP_DONE): $(EE_MAP_OBSERVED) $(EE_MAP_EXPECTED)
 	$(_start)
 	$(_md)/pl/ee_unite.pl \
 		$(EE_MAP_OBSERVED) \
 		$(EE_MAP_EXPECTED) \
 		$(EE_MAP_BINNED).cluster \
-		$@
-	$(_end)
-ee_map: $(EE_MATRIX)
+		$(EE_MATRIX)
+	$(_end_touch)
+ee_map: $(EE_MAP_DONE)

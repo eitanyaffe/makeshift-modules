@@ -29,9 +29,24 @@ while (my $line = <IN>) {
 
     my $contig = $f[$h{contig}];
     my $cluster = $f[$h{cluster}];
-    $contigs{$contig} = $cluster;
+    my $start = $f[$h{start}];
+    my $end = $f[$h{end}];
+
+    if (!defined($contigs{$contig})) {
+	$contigs{$contig} = {};
+	$contigs{$contig}->{coords} = {};
+    }
+    $contigs{$contig}->{coords}->{$start} = {};
+    $contigs{$contig}->{coords}->{$start}->{start} = $start;
+    $contigs{$contig}->{coords}->{$start}->{end} = $end;
+    $contigs{$contig}->{coords}->{$start}->{cluster} = $cluster;
 }
 close(IN);
+
+foreach my $contig (keys %contigs) {
+    my @sorted = sort {$a <=> $b} keys %{$contigs{$contig}->{coords}};
+    $contigs{$contig}->{sorted_coords} = \@sorted;
+}
 
 #######################################################################################
 # traverse fends
@@ -51,10 +66,24 @@ print OUT $header, "\tcluster\n";
 while (my $line = <IN>) {
     chomp $line;
     my @f = split("\t", $line);
-
     my $contig = $f[$h{contig}];
+    my $coord = $f[$h{coord}];
     next if (!defined($contigs{$contig}));
-    my $cluster = $contigs{$contig};
+
+    my $index = binary_search($contigs{$contig}->{sorted_coords}, $coord, "-");
+    next if ($index == -1);
+
+    # segment start
+    my $start = $contigs{$contig}->{sorted_coords}[$index];
+
+    defined ($contigs{$contig}->{coords}->{$start}) or die;
+    my $end = $contigs{$contig}->{coords}->{$start}->{end};
+
+    # skip if not inside bin
+    next if (!($start <= $coord && $coord <= $end));
+
+    # get cluster
+    my $cluster = $contigs{$contig}->{coords}->{$start}->{cluster};
     print OUT $line, "\t", $cluster, "\n";
 }
 close(IN);
@@ -63,6 +92,31 @@ close(OUT);
 #######################################################################################
 # utils
 #######################################################################################
+
+# returns first element above/below value in sorted array
+sub binary_search
+{
+    my $arr = shift;
+    my $value = shift;
+    my $above = shift;
+
+    my $left = 0;
+    my $right = $#$arr;
+
+    while ($left <= $right) {
+	my $mid = ($right + $left) >> 1;
+	my $c = $arr->[$mid] <=> $value;
+	return $mid if ($c == 0);
+	if ($c > 0) {
+	    $right = $mid - 1;
+	} else {
+	    $left  = $mid + 1;
+	}
+    }
+    $left = -1 if ($left > $#$arr);
+    $right = -1 if ($right < 0);
+    return (($above eq "+") ? $left : $right);
+}
 
 sub parse_header
 {

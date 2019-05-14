@@ -11,6 +11,8 @@
 
 #include <queue>
 
+#include <cmath>
+
 #include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>

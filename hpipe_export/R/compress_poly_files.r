@@ -1,6 +1,8 @@
-compress.poly.files=function(ca.ifn, src.base.dir, tgt.base.dir, title)
+compress.poly.files=function(ca.ifn, anchor.field, src.base.dir, tgt.base.dir, title)
 {
     ca =  read.delim(ca.ifn)
+    ca$anchor = ca[,anchor.field]
+
     anchors = sort(unique(ca$anchor))
     contigs = sort(unique(ca$contig[is.element(ca$anchor, anchors)]))
 

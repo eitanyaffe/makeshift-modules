@@ -91,7 +91,7 @@ struct Bin
 };
 
 // limit fend pairs to score
-enum Scope { s_anchored, s_inter_anchor, s_intra_anchor };
+enum Scope { s_anchored, s_inter_anchor, s_intra_anchor, s_all };
 Scope string2scope(string str)
 {
   Scope scope;
@@ -101,6 +101,8 @@ Scope string2scope(string str)
     scope = s_intra_anchor;
   else if (str == "anchored")
     scope = s_anchored;
+  else if (str == "all")
+    scope = s_all;
   else {
     cerr << "Unknown scope " << str << endl;
     exit(1);
@@ -119,6 +121,9 @@ string scope2string(Scope scope)
     break;
   case s_anchored:
     result = "anchored";
+    break;
+  case s_all:
+    result = "all";
     break;
   default:
     cerr << "Unknown scope index " << scope << endl;
@@ -759,6 +764,8 @@ double fends_expected(const vector<Fend>& fends_x, const vector<Fend>& fends_y,
         case s_anchored:
 	  if (!fend_x.on_anchor && !fend_y.on_anchor)
 	    continue;
+	  break;
+        case s_all:
 	  break;
         default:
 	  cerr << "Error: unknown scope" << endl;

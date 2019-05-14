@@ -1,4 +1,4 @@
-INDEX_PREFIX?=$(INDEX_DIR)/index
+INDEX_PREFIX?=$(INDEX_DIR)/idx
 INDEX_DONE?=$(INDEX_DIR)/.done
 $(INDEX_DONE):
 	$(call _assert,MAP_SEQ_FILE)

@@ -1,9 +1,5 @@
-# DATASET: identifier of mapped library
-pr_modules:=preproc assembly
-
 units:=map.mk map_bwa.mk contacts.mk varisum.mk
-
-$(call _register_module,map,$(units),$(pr_modules),)
+$(call _register_module,map,$(units),,)
 
 #####################################################################################################
 # mapping
@@ -43,7 +39,7 @@ MAP_INPUT?=$(wildcard $(MAP_PATTERN))
 MAP_SPLIT_READS_PER_FILE?=10000000
 
 # number of parallel map jobs
-NUM_MAP_JOBS?=20
+NUM_MAP_JOBS?=10
 
 # Phred of read
 MAP_MIN_QUALITY_SCORE?=30

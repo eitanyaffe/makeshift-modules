@@ -241,7 +241,7 @@ model.predict.split=function(
 
   source(paste(wd, "/R/distrib.r", sep=""))
   time = proc.time()
-  distrib(commands=commands, qsub.dir=log.dir, jobname="econtact", batch.max.jobs=njobs, total.max.jobs.fn=max.jobs.fn, sleep.time=1, req.mem=req.mem,
+  distrib(commands=commands, qsub.dir=log.dir, jobname="econtact", batch.max.jobs=njobs, total.max.jobs.fn=max.jobs.fn, sleep.time=2, req.mem=req.mem,
 	  dtype=dtype)
 
   cat(sprintf("distributing expected counts: %f minutes\n", (proc.time() - time)[3]/60))

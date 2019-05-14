@@ -200,14 +200,18 @@ make_taxa_plots: \
 	plot_taxa_limited_trees \
 	plot_taxa_legend \
 	plot_taxa_rep_detail \
-	plot_taxa_rep plot_taxa_rep_analysis  \
+	plot_taxa_rep \
 	plot_taxa_single_tree \
 	plot_taxa_summary_basic plot_taxa_summary_taxa \
 	plot_taxa_resolve_barplot plot_taxa_resolve_details plot_taxa_ref_details \
 	plot_cell_factors \
-	plot_taxa_source_breakdown plot_taxa_accessory_matrix \
-	plot_sg_hic_compare \
-	plot_anchor_vs_core
+	plot_taxa_source_breakdown \
+	plot_sg_hic_compare
+
+make_taxa_evo_plots: \
+	plot_anchor_vs_core \
+	plot_taxa_rep_analysis \
+	plot_taxa_accessory_matrix
 
 ###########################################################
 # obsolete

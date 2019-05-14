@@ -3,7 +3,6 @@ bin.abundance=function(fends.ifn, fends.ofn, bin.ranges.ofn, correction.ofn, mfn
   cat(sprintf("reading fends table: %s\n", fends.ifn))
   table = read.delim(fends.ifn)
 
-
   mfile = read.delim(mfn)
   im = match("abundance", mfile$raw_field)
   if (is.na(im))

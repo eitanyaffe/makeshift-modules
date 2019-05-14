@@ -1,5 +1,5 @@
 
-$(UNIREF_TABLE): $(GENE_REF_IFN)
+$(UNIREF_TABLE):
 	$(call _start,$(UNIREF_TABLE_DIR))
 	$(_md)/pl/make_uniref_table.pl \
 		$(GENE_REF_IFN) \
@@ -7,17 +7,21 @@ $(UNIREF_TABLE): $(GENE_REF_IFN)
 	$(_end)
 uniref_table: $(UNIREF_TABLE)
 
-$(UNIREF_TAX_LOOKUP):
+UNIREF_TAX_LOOKUP_DONE?=$(UNIREF_TABLE_DIR)/.done
+$(UNIREF_TAX_LOOKUP_DONE):
 	$(call _start,$(UNIREF_TABLE_DIR))
 	$(call _time,$(UNIREF_TABLE_DIR),lookup_table) \
 		$(_md)/pl/make_uniref_lookup.pl \
 		$(GENE_REF_XML_IFN) \
-		$@
+		$(UNIREF_TAX_LOOKUP)
 	$(_end)
-uniref_lookup: $(UNIREF_TAX_LOOKUP)
+uniref_lookup: $(UNIREF_TAX_LOOKUP_DONE)
 
-$(UNIREF_GENE_TABLE): $(UNIREF_TABLE) $(GENE_REF_IFN)
+$(UNIREF_GENE_TABLE): $(UNIREF_TABLE)
+	$(_start)
 	cat $(GENE_REF_IFN) | $(_md)/pl/uniref_summary.pl > $@
+	$(_end)
+uniref_gene_table: $(UNIREF_GENE_TABLE)
 
 UNIREF_BLAST_DONE?=$(UNIREF_DIR)/.done_blast
 $(UNIREF_BLAST_DONE): $(UNIREF_GENE_TABLE)
@@ -43,7 +47,7 @@ $(UNIREF_UNIQ_DONE): $(UNIREF_BLAST_DONE)
 	$(_end_touch)
 uniref_uniq: $(UNIREF_UNIQ_DONE)
 
-$(UNIREF_GENE_TAX_TABLE): $(UNIREF_UNIQ_DONE) $(UNIREF_TABLE) $(UNIREF_TAX_LOOKUP)
+$(UNIREF_GENE_TAX_TABLE): $(UNIREF_UNIQ_DONE) $(UNIREF_TABLE) $(UNIREF_TAX_LOOKUP_DONE)
 	$(_start)
 	$(call _time,$(UNIREF_DIR),lookup_uniref) \
 		$(_md)/pl/lookup_uniref.pl \

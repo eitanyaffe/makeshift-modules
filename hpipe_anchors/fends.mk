@@ -13,7 +13,13 @@ $(FENDS_BASIC_DONE):
 	$(_end_touch)
 fends_basic: $(FENDS_BASIC_DONE)
 
+#########################################################################
 # add contig coverage to fends
+#########################################################################
+
+ifeq ($(FENDS_USE_REF),F)
+
+# limit to fends with abundance above threshold
 FENDS_COVERAGE_DONE?=$(FENDS_DIR)/.done_coverage
 $(FENDS_COVERAGE_DONE): $(FENDS_BASIC_DONE)
 	$(call _start,$(FENDS_DIR))
@@ -25,6 +31,24 @@ $(FENDS_COVERAGE_DONE): $(FENDS_BASIC_DONE)
 	$(_end_touch)
 fends: $(FENDS_COVERAGE_DONE)
 
+else
+
+# use a reference set of fends
+FENDS_COVERAGE_DONE?=$(FENDS_DIR)/.done_coverage
+$(FENDS_COVERAGE_DONE): $(FENDS_BASIC_DONE)
+	$(call _start,$(FENDS_DIR))
+	$(_md)/pl/append_coverage_ref.pl \
+		$(COVERAGE_TABLE) \
+		$(FENDS_REF_COVERAGE) \
+		$(FENDS_COVERAGE)
+	$(_end_touch)
+fends: $(FENDS_COVERAGE_DONE)
+
+endif
+
+#########################################################################
+
+# deprecated
 CONTIG_FENDS_DONE?=$(FENDS_DIR)/.done_contig_fends
 $(CONTIG_FENDS_DONE): $(FENDS_BASIC_DONE)
 	$(_start)

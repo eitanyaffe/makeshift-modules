@@ -45,7 +45,7 @@ sc_genomes: $(SC_REF_GENOMES_DONE) $(SC_ANCHOR_GENOMES_DONE)
 SC_FASTA_SUMMARY_DONE?=$(SC_DIR)/.done_fasta_summary
 $(SC_FASTA_SUMMARY_DONE): $(SC_REF_GENOMES_DONE) $(SC_ANCHOR_GENOMES_DONE)
 	$(_start)
-	perl ./md/taxa/pl/sc_fasta_summary.pl \
+	perl $(_md)/pl/sc_fasta_summary.pl \
 		$(SC_TABLE) \
 		$(SC_REF_DIR) \
 		$(SC_ANCHOR_DIR) \
@@ -282,6 +282,6 @@ sc_element_genes: $(SC_ELEMENT_GENES_DONE)
 
 make_taxa: \
 $(TAXA_REP_PATH_DONE) $(TAXA_RESOLVE_DONE) $(TAXA_GENOMES_DONE) $(TAXA_REP_LEGEND_DONE) \
-$(SC_SUMMARY_DONE) $(SC_ELEMENTS_GENES_DONE)
+$(SC_SUMMARY_DONE) $(SC_ELEMENT_GENES_DONE)
 
 

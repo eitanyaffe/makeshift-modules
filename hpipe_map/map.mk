@@ -3,7 +3,7 @@ SPLIT_DONE=$(MAP_DIR)/.done_split
 $(SPLIT_DONE):
 	@echo '##' Assembly: $(ASSEMBLY_ID)
 	@echo '##' Mapping library: $(MAP_LIB_ID)
-	$(call _assert,MAP_LIB_ID MAP_INPUT PREPROC_FINAL_BASE)
+	$(call _assert,MAP_LIB_ID MAP_INPUT)
 	$(call _start,$(SPLIT_DIR))
 	$(call _time,$(MAP_DIR),split) \
 		$(_md)/pl/split_fastq.pl \

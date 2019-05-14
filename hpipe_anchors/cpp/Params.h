@@ -60,7 +60,7 @@ struct ParserDouble : public Parser {
   void parse(char* arg) { value = atof(arg); };
 
   // conversions
-  string to_string() { return std::to_string(value); };
+  string to_string() { long double lvalue = value; return std::to_string(lvalue); };
   double to_double() { return value; };
 };
 

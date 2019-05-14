@@ -61,7 +61,7 @@ while (my $line = <IN>) {
     my $coverage = $contigs{$contig};
 
 
-    if ($coverage < $min_abundance) {
+    if ($min_abundance ne "NA" && $coverage < $min_abundance) {
 	$skip++;
 	next
     }

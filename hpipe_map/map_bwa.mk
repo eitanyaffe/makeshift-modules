@@ -1,4 +1,4 @@
-INDEX_PREFIX?=$(INDEX_DIR)/index
+INDEX_PREFIX?=$(INDEX_DIR)/idx
 INDEX_DONE?=$(INDEX_DIR)/.done
 $(INDEX_DONE):
 	$(call _start,$(INDEX_DIR))
@@ -6,7 +6,7 @@ $(INDEX_DONE):
 		-p $(INDEX_PREFIX) \
 		$(MAP_SEQ_FILE)
 	$(_end_touch)
-index: $(INDEX_DONE)
+bwa_index: $(INDEX_DONE)
 
 MAP_DONE?=$(MAP_DIR)/.done_map_bwa
 $(MAP_DONE): $(INDEX_DONE) $(SPLIT_DONE)
@@ -61,3 +61,4 @@ endif
 	$(_end_touch)
 
 map_bwa: $(VERIFY_PARSE_DONE)
+
