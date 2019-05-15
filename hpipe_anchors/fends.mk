@@ -6,10 +6,10 @@
 FENDS_BASIC_DONE?=$(FENDS_ASSEMBLY_DIR)/.done_basic
 $(FENDS_BASIC_DONE):
 	$(call _start,$(FENDS_ASSEMBLY_DIR))
-	$(_md)/pl/extract_sites.pl \
-		$(CUTTER_SITE) \
+	perl $(_md)/pl/extract_sites_multi.pl \
 		$(CONTIG_FILE) \
-		$(FENDS_BASIC)
+		$(FENDS_BASIC) \
+		$(CUTTER_SITE)
 	$(_end_touch)
 fends_basic: $(FENDS_BASIC_DONE)
 

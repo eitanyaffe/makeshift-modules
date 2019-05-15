@@ -41,7 +41,7 @@ print "sequence file: $seq_file\n";
 print "output table: $outfile\n";
 
 
-(int($site_len/2) == $site_len/2) or die "Length of first cutter must be even";
+(int($site_len/2) == $site_len/2) or die "Length of cutter must be even";
 
 my(@hits);
 
