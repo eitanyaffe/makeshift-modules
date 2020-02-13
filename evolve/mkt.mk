@@ -123,6 +123,21 @@ $(MKT_GENE_TABLE_DONE): $(MKT_MERGE_DONE)
 	$(_end_touch)
 mkt_gene_table: $(MKT_GENE_TABLE_DONE)
 
+#########################################################
+# recombination vs mutation
+#########################################################
+
+# compute distance to neareast fixated
+MKT_FIX_DISTANCE_DONE?=$(MKT_DIR)/.done_fix_distance
+$(MKT_FIX_DISTANCE_DONE): $(MKT_FIX_DONE)
+	$(_start)
+	$(_R) R/mkt.r fix.distance \
+		ifn.fix=$(MKT_GENE_FIX_DETAILS) \
+		ifn.genes=$(GENE_TABLE) \
+		ofn=$()
+	$(_end_touch)
+mkt_fix_dist: $(MKT_FIX_DISTANCE_DONE)
+
 mkt_all: $(MKT_MERGE_DONE) $(MKT_GENE_TABLE_DONE)
 
 #########################################################

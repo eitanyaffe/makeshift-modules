@@ -57,5 +57,5 @@ POLY_EXPORT_FIELD?=anchor
 # flat structure, used by the hpipe wrapper
 #####################################################################################################
 
-FLAT_DIR?=$(OUTDIR)/result
+FLAT_DIR?=$(OUTDIR)/result/$(EXPORT_LABEL)
 

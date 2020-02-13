@@ -1,5 +1,5 @@
 compute.elements=function(
-    ifn.genes, ifn.ga,
+    ifn.genes, ifn.ga, anchor.field,
     ifn.core.table, ifn.core.genes,
     ofn.element.table, ofn.ge, ofn.ge.shared, ofn.ea)
 {
@@ -7,6 +7,8 @@ compute.elements=function(
     ga = load.table(ifn.ga)
     core.genes = load.table(ifn.core.genes)
     core.table = load.table(ifn.core.table)
+
+    ga$anchor = ga[,anchor.field]
 
     # limit to selected cores
     ga = ga[is.element(ga$anchor, core.table$anchor),]
@@ -19,11 +21,17 @@ compute.elements=function(
     # shared
     ######################################################################
 
-    ge.shared = genes[is.element(genes$gene, shared),]
-    contig.shared = unique(ge.shared$contig)
-    ge.shared$element = match(ge.shared$contig, contig.shared)
-    ge.shared = ge.shared[,c("gene", "element")]
-    ge.shared$type = "shared"
+    if (any(fc$count>1)) {
+        ge.shared = genes[is.element(genes$gene, shared),]
+        contig.shared = unique(ge.shared$contig)
+        ge.shared$element = match(ge.shared$contig, contig.shared)
+        ge.shared = ge.shared[,c("gene", "element")]
+        ge.shared$type = "shared"
+        shared.max = max(ge.shared$element)
+    } else {
+        shared.max = 0
+        ge.shared = NULL
+    }
 
     ######################################################################
     # singles
@@ -44,7 +52,7 @@ compute.elements=function(
     df.acc = df[!df$is.core, c("gene", "anchor", "island.key")]
     island.keys = unique(df.acc$island.key)
     ge.single = data.frame(gene=df.acc$gene, element.base=match(df.acc$island.key, island.keys))
-    ge.single$element = ge.single$element.base + max(ge.shared$element)
+    ge.single$element = ge.single$element.base + shared.max
     ge.single = ge.single[,c("gene", "element")]
     ge.single$type = "single"
 

@@ -14,7 +14,8 @@ $(call _register_module,genes,$(units),,)
 GENES_INPUT?=$(FULL_CONTIG_FILE)
 
 # MetaGeneMarker
-MGM?=/home/eitany/work/tools/MetaGeneMark_linux_64/mgm
+MGM_DIR?=/home/eitany/work/tools/MetaGeneMark_linux_64
+MGM?=$(MGM_DIR)/mgm
 
 # root dir for output
 PREDICT_DIR?=$(ASSEMBLY_DIR)/genes

@@ -7,7 +7,7 @@ $(INDEX_DONE):
 		-p $(INDEX_PREFIX) \
 		$(MAP_SEQ_FILE)
 	$(_end_touch)
-index: $(INDEX_DONE)
+map_index: $(INDEX_DONE)
 
 MAP_DONE?=$(MAP_DIR)/.done_map_bwa
 $(MAP_DONE): $(INDEX_DONE) $(SPLIT_DONE)
@@ -21,7 +21,7 @@ $(MAP_DONE): $(INDEX_DONE) $(SPLIT_DONE)
 	$(_end_touch)
 map_bwa: $(MAP_DONE)
 
-PARSE_QSUB_DIR?=$(QSUB_LIB_DIR)/map_parse
+PARSE_QSUB_DIR?=$(MAP_TMPDIR)/map_parse
 
 # parse the bwa/sam output
 PARSE_SCRIPT?=$(_md)/pl/parse_bwa_sam.pl
@@ -41,7 +41,7 @@ $(PARSE_DONE): $(MAP_DONE)
 		dtype=$(DTYPE) \
 		jobname=mparse
 	$(_end_touch)
-parse: $(PARSE_DONE)
+map_parse: $(PARSE_DONE)
 
 # verify parse using ref genome
 SHOULD_VERIFY?=F
@@ -62,3 +62,6 @@ ifeq ($(SHOULD_VERIFY),T)
 endif
 	$(_end_touch)
 map_verify: $(VERIFY_PARSE_DONE)
+
+map_basic: $(PARSE_DONE)
+

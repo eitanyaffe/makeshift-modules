@@ -20,7 +20,7 @@ my $count = 0;
 my %reads;
 
 # we discard the sequence field at this time
-my @fields = ("contig", "coord", "back_coord", "strand", "edit_dist", "score", "match_length", "cigar", "substitute", "insert", "delete", "clip");
+my @fields = ("contig", "coord", "back_coord", "strand", "edit_dist", "score", "match_length", "cigar", "substitute", "insert", "delete", "clip", "unique");
 
 ######################################################################################################
 # load read1

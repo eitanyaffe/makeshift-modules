@@ -5,7 +5,7 @@ use warnings FATAL => qw(all);
 use List::Util qw(sum);
 
 if ($#ARGV == -1) {
-    print STDERR "usage: $0 <anchor/ref table> <contig table> <gene table> <anchor/gene table> <fragment length> <input dir> <ofn>\n";
+    print STDERR "usage: $0 <anchor/ref table> <contig table> <gene table> <anchor/gene table> <anchor/gene field> <fragment length> <input dir> <ofn>\n";
 	exit 1;
 }
 
@@ -13,6 +13,7 @@ my @pnames = ("ifn_ref",
 	      "ifn_contigs",
 	      "ifn_genes",
 	      "ifn_anchor_gene",
+	      "anchor_gene_field",
 	      "frag_length",
 	      "idir",
 	      "ofn"
@@ -26,6 +27,8 @@ foreach my $key (keys %p) {
     print $key, ": ", $p{$key}, "\n";
 }
 print "=============================================\n";
+
+my $anchor_field = $p{anchor_gene_field};
 
 #######################################################################################
 # read contig table
@@ -123,7 +126,7 @@ while (my $line = <IN>) {
     chomp($line);
     my @f = split("\t", $line);
     my $gene = $f[$h{gene}];
-    my $anchor = $f[$h{anchor}];
+    my $anchor = $f[$h{$anchor_field}];
     defined($genes{$gene}) && defined($anchors{$anchor}) || die;
 
     my $ref = $anchors{$anchor}->{ref};

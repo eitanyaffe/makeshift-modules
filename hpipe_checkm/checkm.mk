@@ -84,4 +84,11 @@ checkm_plot:
 		max.contam=$(CHECKM_MAX_CONTAM) \
 		fdir=$(CHECKM_FDIR)
 
+checkm_simple_plot:
+	$(_R) R/checkm_plot.r plot.analysis.simple \
+		ifn.qa=$(CHECKM_QA_PREFIX).1 \
+		min.complete=$(CHECKM_MIN_COMPLETE) \
+		max.contam=$(CHECKM_MAX_CONTAM) \
+		fdir=$(CHECKM_FDIR)
+
 make_checkm_plots: checkm_plot

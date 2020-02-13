@@ -54,7 +54,7 @@ while (my $line = <IN>) {
     $line = join("\t", @f[0...$#f-1]);
 
     # low quality (either non-unique or many too many mismatches in alignment)
-    if ($f[$h{score}] < $min_score) {
+    if ($f[$h{score}] < $min_score && $f[$h{unique}] eq "T") {
 	$stats{low_score}++;
 	next;
     }

@@ -6,7 +6,7 @@ VARISUM_BIN=$(_md)/bin.$(shell hostname)/varisum
 init_vari: $(VARISUM_BIN)
 
 # compute variance over selected catalog genes
-VAR_DONE?=$(MAP_DIR)/.done_poly
+VAR_DONE?=$(VAR_DIR)/.done_poly
 $(VAR_DONE):
 	$(call _assert,VAR_INPUT_CONTIG_TABLE)
 	$(_start)
@@ -15,15 +15,18 @@ $(VAR_DONE):
 		-idir $(VAR_INPUT_PARSE_DIR) \
 		-contigs $(VAR_INPUT_CONTIG_TABLE) \
 		-contig_field $(VAR_INPUT_ITEM_FIELD) \
+		-contigs_fa $(VAR_INPUT_CONTIG_FASTA) \
 		-min_score $(VAR_MIN_SCORE) \
 		-min_length $(VAR_MIN_MATCH_LENGTH) \
 		-max_edit $(VAR_MAX_EDIT_DISTANCE) \
 		-odir_full $(VAR_OUTPUT_FULL_DIR) \
-		-odir_clipped $(VAR_OUTPUT_CLIPPED_DIR)
+		-odir_clipped $(VAR_OUTPUT_CLIPPED_DIR) \
+		-ofn_snp_full $(VAR_SNP_TABLE_FULL) \
+		-ofn_snp_clipped $(VAR_SNP_TABLE_CLIPPED)
 	$(_end_touch)
 vari: $(VAR_DONE)
 
-VAR_BIN_DONE?=$(MAP_DIR)/.done_polybin
+VAR_BIN_DONE?=$(VAR_DIR)/.done_polybin
 $(VAR_BIN_DONE):
 	$(_start)
 	$(_R) $(_md)/R/vari_bin.r vari.bin \
@@ -38,7 +41,7 @@ $(VAR_BIN_DONE):
 	$(_end_touch)
 vari_bin: $(VAR_BIN_DONE)
 
-VAR_SUMMARY_DONE?=$(MAP_DIR)/.done_poly_summary
+VAR_SUMMARY_DONE?=$(VAR_DIR)/.done_poly_summary
 $(VAR_SUMMARY_DONE):
 	$(_start)
 	$(_R) $(_md)/R/vari_summary.r vari.summary \
@@ -53,3 +56,17 @@ $(VAR_SUMMARY_DONE):
 	$(_end_touch)
 vari_summary: $(VAR_SUMMARY_DONE)
 
+VAR_COMPRESS_DONE?=$(VAR_DIR)/.done_vari_compress
+$(VAR_COMPRESS_DONE):
+	$(_start)
+	tar cf $(VAR_OUTPUT_FULL_TAR) -C $(VAR_OUTPUT_FULL_DIR) .
+	tar cf $(VAR_OUTPUT_CLIPPED_TAR) -C $(VAR_OUTPUT_CLIPPED_DIR) .
+	$(_end_touch)
+vari_compress_base: $(VAR_COMPRESS_DONE)
+
+VAR_COMPRESS_CLEAN_DONE?=$(VAR_DIR)/.done_vari_compress_clean
+$(VAR_COMPRESS_CLEAN_DONE): $(VAR_COMPRESS_DONE)
+	$(_start)
+	rm -rf $(VAR_OUTPUT_FULL_DIR) $(VAR_OUTPUT_CLIPPED_DIR)
+	$(_end_touch)
+vari_compress: $(VAR_COMPRESS_CLEAN_DONE)

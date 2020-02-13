@@ -29,10 +29,10 @@ $(SPLIT_DONE):
 			$(MAP_INPUT_STAT) \
 			$(MAP_INPUT)
 	$(_end_touch)
-split: $(SPLIT_DONE)
+map_split: $(SPLIT_DONE)
 
 # filter reads
-FILTER_QSUB_DIR?=$(QSUB_LIB_DIR)/map_filter
+FILTER_QSUB_DIR?=$(MAP_TMPDIR)/map_filter
 FILTER_DONE?=$(MAP_DIR)/.done_filter_$(FILTER_ID)
 FILTER_SCRIPT?=$(_md)/pl/filter_map.pl
 $(FILTER_DONE): $(VERIFY_PARSE_DONE)
@@ -53,9 +53,31 @@ $(FILTER_DONE): $(VERIFY_PARSE_DONE)
 		dtype=$(DTYPE) \
 		jobname=mfilter
 	$(_end_touch)
-filter: $(FILTER_DONE)
+map_filter: $(FILTER_DONE)
 
 map: $(FILTER_DONE)
+
+MAP_PAIRED_QSUB_DIR?=$(MAP_TMPDIR)/map_pair
+
+# parse the bwa/sam output and create a paired coord table
+PAIRED_DONE?=$(MAP_DIR)/.done_pair
+PAIR_SCRIPT?=$(_md)/pl/pair_reads.pl
+$(PAIRED_DONE): $(FILTER_DONE)
+	$(call _start,$(PAIRED_DIR))
+	mkdir -p $(PAIRED_STAT_DIR)
+	$(call _time,$(MAP_DIR),pair) $(_R) $(_md)/R/distrib_map.r distrib.pair \
+		script=$(PAIR_SCRIPT) \
+		idir=$(FILTER_DIR) \
+		odir=$(PAIRED_DIR) \
+		sdir=$(PAIRED_STAT_DIR) \
+		sfile=$(PAIRED_STAT_FILE) \
+		qsub.dir=$(MAP_PAIRED_QSUB_DIR) \
+		batch.max.jobs=$(NUM_MAP_JOBS) \
+		total.max.jobs.fn=$(MAX_JOBS_FN) \
+		dtype=$(DTYPE) \
+		jobname=mpair
+	$(_end_touch)
+pair: $(PAIRED_DONE)
 
 # remove split/mapped/parsed directories yet keep .done files
 CLEAN_DONE?=$(MAP_DIR)/.done_clean
@@ -64,7 +86,8 @@ $(CLEAN_DONE):
 ifeq ($(MAP_PURGE_SPLIT),T)
 	rm -rf $(SPLIT_DIR)
 endif
-	rm -rf $(MAPPED_DIR) $(PARSE_DIR)
+	rm -rf $(MAPPED_DIR)
 	$(_end_touch)
 map_clean: $(CLEAN_DONE)
 
+map_all: map pair coverage

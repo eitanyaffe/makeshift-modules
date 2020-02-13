@@ -103,6 +103,8 @@ $(TAXA_GENOMES_DONE): $(TAXA_TREES_DONE)
 	$(_end_touch)
 taxa_genomes: $(TAXA_GENOMES_DONE)
 
+make_taxa_basic: $(TAXA_REP_PATH_DONE) $(TAXA_RESOLVE_DONE) $(TAXA_GENOMES_DONE) $(TAXA_REP_LEGEND_DONE)
+
 .PHONY: taxa_trees taxa_reps GO_append make_taxa
 
 ###################################################################################################

@@ -1,5 +1,5 @@
 compute.cores=function(
-    ifn.genes, ifn.ref, ifn.ga, ifn.checkm,
+    ifn.genes, ifn.ref, ifn.ga, ifn.checkm, anchor.field,
     identity.threshold, min.core.percent, min.complete, max.contam,
     ofn.core.table, ofn.core.base.table, ofn.core.genes)
 {
@@ -8,6 +8,8 @@ compute.cores=function(
     ga = load.table(ifn.ga)
     checkm = load.table(ifn.checkm)
     checkm$anchor = checkm[,1]
+
+    ga$anchor = ga[,anchor.field]
 
     fc = field.count(ga, "gene")
     shared = fc$gene[fc$count>1]

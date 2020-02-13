@@ -51,9 +51,11 @@ plot.rate=function(ifn.aab, ifn.fp, years, fdir)
 
     df = rbind(aab, fp)
     df = df[df$core.fate == "persist",]
-    df$rate = (df$gene.not.detected + df$gene.turnover) / years
-    df = df[order(df$rate),]
+    df$HGT = df$gene.not.detected + df$gene.turnover
+    df$rate = df$HGT / years
+    df = df[order(df$rate, decreasing=T),]
     df$id = paste(df$subject, df$anchor.id, sep="_")
+    df$index = 1:dim(df)[1]
 
     main = sprintf("genes/year\nmin/mid/max=%.0f/%.0f/%.0f", min(df$rate), median(df$rate), max(df$rate))
 
@@ -69,5 +71,22 @@ plot.rate=function(ifn.aab, ifn.fp, years, fdir)
 
     fig.start(fdir=fdir, ofn=paste(fdir, "/gene_turn_per_year_names.pdf", sep=""), type="pdf", height=height, width=1+N*inch.per.genome)
     barplot(df$rate, names.arg=df$id, border=NA, col="darkblue", ylim=ylim, las=2, cex.names=cex.names, main=main)
+    fig.end()
+
+    height = 4
+    width = 3.3
+    xlim = c(0, 1.1 * max(df$mut.count))
+    ylim = c(0, 1.1 * max(df$HGT))
+    fig.start(fdir=fdir, ofn=paste(fdir, "/HGT_vs_mutations.pdf", sep=""), type="pdf", height=height, width=width)
+    plot.init(xlim=xlim, ylim=ylim)
+    abline(a=0, b=1, col="gray")
+    points(df$mut.count, df$HGT, pch=19, col="darkblue", cex=0.5)
+    fig.end()
+
+    fig.start(fdir=fdir, ofn=paste(fdir, "/HGT_vs_mutations_indices.pdf", sep=""), type="pdf", height=height, width=width)
+    plot.init(xlim=xlim, ylim=ylim, xlab="#genes", ylab="#sites", axis.las=1)
+    abline(a=0, b=1, col="gray")
+    points(df$mut.count, df$HGT, pch=19, col="darkblue", cex=0.5)
+    text(df$mut.count, df$HGT, df$index, pos=4, cex=0.5)
     fig.end()
 }

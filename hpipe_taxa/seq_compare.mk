@@ -21,8 +21,9 @@ SC_ANCHOR_GENOMES_DONE?=$(SC_DIR)/.done_anchor_genomes
 $(SC_ANCHOR_GENOMES_DONE):
 	$(call _start,$(SC_ANCHOR_DIR))
 	perl $(_md)/pl/get_anchor_seq.pl \
-		$(FULL_CONTIG_FILE) \
-		$(CA_ANCHOR_CONTIGS) \
+		$(TAXA_CONTIG_FILE) \
+		$(TAXA_SET_CONTIGS) \
+		$(TAXA_SET_FIELD) \
 		F \
 		$(SC_ANCHOR_DIR)
 	$(_end_touch)
@@ -224,7 +225,8 @@ $(SC_GENES_DONE): $(SC_ANCHOR2REF_DONE) $(SC_REF2ANCHOR_DONE)
 		$(SC_SUMMARY_UNIQUE) \
 		$(CONTIG_TABLE) \
 		$(GENE_TABLE) \
-		$(CA_ANCHOR_GENES) \
+		$(TAXA_SET_GENES) \
+		$(TAXA_SET_FIELD) \
 		$(SC_FRAGMENT_LENGTH) \
 		$(SC_ANCHOR2REF_DIR) \
 		$(SC_GENE_TABLE)
@@ -238,12 +240,13 @@ $(SC_CORES_DONE): $(SC_GENES_DONE)
 	$(_R) R/compute_cores.r compute.cores \
 		ifn.ref=$(SC_GENE_TABLE) \
 		ifn.genes=$(GENE_TABLE) \
-		ifn.ga=$(CA_ANCHOR_GENES) \
-		ifn.checkm=$(CHECKM_QA) \
+		ifn.ga=$(TAXA_SET_GENES) \
+		anchor.field=$(TAXA_SET_FIELD) \
+		ifn.checkm=$(SC_CHECKM_QA) \
 		identity.threshold=$(SC_IDENTITY_THRESHOLD) \
 		min.core.percent=$(SC_MIN_CORE_PERCENTAGE) \
-		min.complete=$(CHECKM_MIN_COMPLETE) \
-		max.contam=$(CHECKM_MAX_CONTAM) \
+		min.complete=$(SC_CHECKM_MIN_COMPLETE) \
+		max.contam=$(SC_CHECKM_MAX_CONTAM) \
 		ofn.core.base.table=$(SC_CORE_BASE_TABLE) \
 		ofn.core.table=$(SC_CORE_TABLE) \
 		ofn.core.genes=$(SC_CORE_GENES)
@@ -256,7 +259,8 @@ $(SC_ELEMENTS_DONE): $(SC_CORES_DONE)
 	$(_start)
 	$(_R) R/compute_elements.r compute.elements \
 		ifn.genes=$(GENE_TABLE) \
-		ifn.ga=$(CA_ANCHOR_GENES) \
+		ifn.ga=$(TAXA_SET_GENES) \
+		anchor.field=$(TAXA_SET_FIELD) \
 		ifn.core.table=$(SC_CORE_TABLE) \
 		ifn.core.genes=$(SC_CORE_GENES) \
 		ofn.element.table=$(SC_ELEMENT_TABLE) \
@@ -278,10 +282,20 @@ $(SC_ELEMENT_GENES_DONE): $(SC_ELEMENTS_DONE)
 	$(_end_touch)
 sc_element_genes: $(SC_ELEMENT_GENES_DONE)
 
+SC_ASSOCIATED_GENES_DONE?=$(ELEMENT_DIR)/.done_associated_genes
+$(SC_ASSOCIATED_GENES_DONE): $(SC_ELEMENT_GENES_DONE)
+	$(_start)
+	$(_R) R/associated_genes.r associated.genes \
+		ifn.core.genes=$(SC_CORE_GENES) \
+		ifn.element.genes=$(SC_GENE_ELEMENT) \
+		ofn=$(SC_ASSOCIATED_GENES)
+	$(_end_touch)
+sc_associated: $(SC_ASSOCIATED_GENES_DONE)
+
 ###########################################################
 
 make_taxa: \
 $(TAXA_REP_PATH_DONE) $(TAXA_RESOLVE_DONE) $(TAXA_GENOMES_DONE) $(TAXA_REP_LEGEND_DONE) \
-$(SC_SUMMARY_DONE) $(SC_ELEMENT_GENES_DONE)
+$(SC_SUMMARY_DONE) $(SC_ELEMENT_GENES_DONE) $(SC_ASSOCIATED_GENES_DONE)
 
 

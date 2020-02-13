@@ -39,7 +39,7 @@ open(IN, $ifn) || die $ifn;
 
 print STDERR "generating file: $ofn\n";
 open(OUT, ">", $ofn) || die $ofn;
-print OUT "id\tcontig\tcoord\tback_coord\tstrand\tedit_dist\tscore\tmatch_length\tcigar\tsubstitute\tinsert\tdelete\tclip\tsequence\n";
+print OUT "id\tcontig\tcoord\tback_coord\tstrand\tedit_dist\tscore\tmatch_length\tcigar\tsubstitute\tinsert\tdelete\tclip\tunique\tsequence\n";
 
 my $count = 0;
 
@@ -94,9 +94,11 @@ while (my $line = <IN>) {
     # get edit distance
     my $dist = "";
     my $md = "";
+    my $unique = 1;
     for (my $i = 11; $i < @f; $i++) {
 	$dist = $f[$i] if substr($f[$i], 0, 2) eq "NM";
 	$md = $f[$i] if substr($f[$i], 0, 2) eq "MD";
+	$unique = 0 if substr($f[$i], 0, 2) eq "XA";
     }
     $dist =~ s/NM:i://;
     $dist ne "" or die "NM field not found";
@@ -191,7 +193,9 @@ while (my $line = <IN>) {
     my $clip_end = ($typeN eq "S") ? length($seq)-$lenN : length($seq);
 
     my $clip_str = $clip_start.";".$clip_end;
-    print OUT "$id\t$contig\t$front_coord\t$back_coord\t$strand\t$dist\t$score\t$mlength\t$cigar\t$sub_str\t$insert_str\t$delete_str\t$clip_str\t$seq\n";
+
+    my $unique_str = $unique ? "T" : "F";
+    print OUT "$id\t$contig\t$front_coord\t$back_coord\t$strand\t$dist\t$score\t$mlength\t$cigar\t$sub_str\t$insert_str\t$delete_str\t$clip_str\t$unique_str\t$seq\n";
 
 }
 close(IN);

@@ -29,7 +29,7 @@ anchor.contigs=function(ifn, min.contacts=10, min.enrichment, min.contig.coverag
 {
     table = load.table(ifn)
 
-    # remove contig/anchor pairs that had observed contacts
+    # remove contig/anchor pairs that had no observed contacts
     table = table[table$any_observed,]
 
     anchors = unique(table$anchor)

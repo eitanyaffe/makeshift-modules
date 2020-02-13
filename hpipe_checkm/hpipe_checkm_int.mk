@@ -8,6 +8,8 @@ $(call _register_module,checkm,$(units),)
 
 #####################################################################################################
 
+CHECKM?=~/work/python/local2/bin/checkm
+
 # taxa | lineage
 CHECKM_STYLE?=lineage
 

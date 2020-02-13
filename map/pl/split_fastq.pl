@@ -96,7 +96,6 @@ foreach my $fkey (keys %pfiles) {
 		close(OUT1);
 		close(OUT2);
 
-
 		$oindex++;
 
 		$ofn1 = $odir."/R1_".$oindex.".fastq";

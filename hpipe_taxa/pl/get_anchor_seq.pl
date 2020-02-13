@@ -8,13 +8,14 @@ use File::stat;
 use File::Basename;
 
 if ($#ARGV == -1) {
-    print STDERR "usage: $0 <fasta file> <contig anchor table> <only anchor T|F> <odir>\n";
+    print STDERR "usage: $0 <fasta file> <contig anchor table> <anchor field> <only anchor T|F> <odir>\n";
 	exit 1;
 }
 
 my @pnames = (
     "fasta_ifn",
     "ca_ifn",
+    "anchor_field",
     "only_anchor",
     "odir"
     );
@@ -31,6 +32,7 @@ print "=============================================\n";
 my $fasta_ifn = $p{fasta_ifn};
 my $output_only_anchor = $p{only_anchor} eq "T";
 my $ca_ifn = $p{ca_ifn};
+my $field = $p{anchor_field};
 
 #######################################################################################
 # read fasta
@@ -70,13 +72,16 @@ my %h = parse_header($header);
 while (my $line = <IN>) {
     chomp($line);
     my @f = split("\t", $line);
-    my $anchor = $f[$h{anchor}];
+    my $anchor = $f[$h{$field}];
     my $contig = $f[$h{contig}];
-    my $is_anchor = $f[$h{anchor}] eq $f[$h{contig_anchor}];
     defined($contigs{$contig}) or die "anchor: $anchor, contig: $contig";
 
-    next if ($output_only_anchor && !$is_anchor);
-    
+    # assumes two fields exist: anchor and contig_anchor
+    if ($output_only_anchor) {
+	my $is_anchor = $f[$h{anchor}] eq $f[$h{contig_anchor}];
+	next if (!$is_anchor);
+    }
+
     my $seq = $contigs{$contig};
 
     $anchors{$anchor} = {} if (!defined($anchors{$anchor}));

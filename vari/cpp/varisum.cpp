@@ -20,7 +20,7 @@
 #include "util.h"
 #include "Params.h"
 
-#define massert_range(v, coord) massert(coord >= 0 && coord < (int)v.size(), "coord not in vector range");
+#define massert_range(v, coord, id) massert(coord >= 0 && coord < (int)v.size(), "coord %d outside vector of length %d, id: %s", coord, (int)v.size(), id.c_str());
 #define INCREMENT(v, coord, var, length) \
 massert(coord >=0 && coord < length, "coord out of range, coord=%d, contig_size=%d", coord, length); \
 v[coord][var]++;
@@ -28,6 +28,30 @@ v[coord][var]++;
 // cout << "coord=" << coord  << " var=" << var.str() << endl;
 
 using namespace std;
+
+char index2char(int i) {
+  switch (i)
+    {
+    case 0: return('A');
+    case 1: return('C');
+    case 2: return('G');
+    case 3: return('T');
+    }
+  massert(0, "unknown character index");
+  return 0;
+}
+
+int char2index(char c) {
+  switch (c)
+    {
+    case 'A': return(0);
+    case 'C': return(1);
+    case 'G': return(2);
+    case 'T': return(3);
+    }
+  massert(0, "unknown character: %c", c);
+  return 0;
+}
 
 enum VariType { vtNone, vtSubstitute, vtDelete, vtInsert, vtDangleLeft, vtDangleRight };
 struct Variation {
@@ -66,9 +90,13 @@ void init_params(int argc, char **argv, Parameters& params)
 {
   params.add_parser("idir", new ParserFilename("input directory"), true);
   params.add_parser("contigs", new ParserFilename("contig table"), true);
+  params.add_parser("contigs_fa", new ParserFilename("contig fasta file"), true);
   params.add_parser("contig_field", new ParserString("contig field"), true);
   params.add_parser("odir_full", new ParserFilename("output directory of fully matched reads"), true);
   params.add_parser("odir_clipped", new ParserFilename("output directory of reads clipped on either side"), true);
+
+  params.add_parser("ofn_snp_full", new ParserFilename("output snp table, full reads"), true);
+  params.add_parser("ofn_snp_clipped", new ParserFilename("output snp table, clipped reads"), true);
 
   params.add_parser("min_length", new ParserInteger("minimal match length (nts)", 50), false);
   params.add_parser("min_score", new ParserInteger("minimal score", 30), false);
@@ -152,7 +180,43 @@ string reverse_complement(string seq) {
   return(result);
 }
 
-void process_fasta(string fn,
+void read_fasta(string fn, map<string,string>& contigs)
+{
+  massert(fn != "", "assembly file not defined");
+  cout << "loading assembly file (fasta): " << fn << endl;
+  ifstream in(fn.c_str());
+  massert(in.is_open(), "could not open file %s", fn.c_str());
+
+  string contig = "";
+  string seq = "";
+  while(1) {
+    string line;
+    getline(in, line);
+    bool eof = in.eof();
+    if (eof)
+      break;
+    if (!eof && !in.good()) {
+      cerr << "Error reading line, rdstate=" << in.rdstate() << endl;
+      exit(-1);
+    }
+    massert(line.length() > 0, "empty line in fasta file");
+    if (line[0] == '>') {
+      if (contig != "")
+	contigs[contig] = seq;
+      contig = line.substr(1);
+      if (contig.find(' ') != string::npos)
+	contig = contig.substr(0, contig.find(' '));
+      seq = "";
+    } else {
+      seq += line;
+    }
+  }
+  if (contig != "")
+    contigs[contig] = seq;
+  in.close();
+}
+
+void process_mapping_file(string fn,
 		   map<string, int>& contig_map,
 		   int min_score, int min_length, int max_edit,
 		   map< string, map< int, map <Variation, int> > >& full_poly,
@@ -219,7 +283,7 @@ void process_fasta(string fn,
     // skip if quality or match length fall under thresholds
     if (match_length < min_length || score < min_score || edit_dist > max_edit)
       continue;
-    
+
     // skip if this is a secondary match with a lower score
     if (id_score.find(id) != id_score.end()) {
       if (score <= id_score[id])
@@ -332,7 +396,7 @@ void process_fasta(string fn,
     vector<int>& coverage_contig = !clipped ? full_coverage[contig] : clipped_coverage[contig];
     for (int i=0; i<read_length; ++i) {
       int coord = left_coord + i;
-      massert_range(coverage_contig, coord);
+      massert_range(coverage_contig, coord, id);
       coverage_contig[coord]++;
     }
   }
@@ -357,7 +421,7 @@ void read_contig_table(string fn, string contig_field, map<string, int>& contig_
       break;
 
     string contig = fields[contig_ind];
-    int length = atoi(fields[length_ind].c_str());
+    int length = (int)atof(fields[length_ind].c_str());
     contig_map[contig] = length;
   }
 }
@@ -369,15 +433,27 @@ inline double mround(double v, int digits) {
 
 void save_tables(map<string, int>& contig_map,
 		 map< string, map< int, map <Variation, int> > >& table,
-		 map<string, vector<int> >& coverage, string odir)
+		 map<string, vector<int> >& coverage, string odir,
+		 string ofn_snp_table, map<string, string>& contig_seq)
 {
-  cout << "writing output in director: " << odir << endl;
+  cout << "saving snp table: " << ofn_snp_table << endl;
+  ofstream out_snps_table(ofn_snp_table.c_str());
+  out_snps_table << "contig\tcoord\t";
+  for (int i=0; i<4; ++i)
+    out_snps_table << index2char(i) << "\t";
+  out_snps_table << "ref" << endl;
+  vector<int> empty(4, 0);
+
+  cout << "writing output in directory: " << odir << endl;
   for (map<string, int>::iterator it=contig_map.begin(); it!=contig_map.end(); ++it) {
     string contig = (*it).first;
     int length = (*it).second;
     map< int, map <Variation, int> >& table_contig = table[contig];
     vector<int>& coverage_contig = coverage[contig];
     massert((unsigned int)length == coverage_contig.size(), "internal error");
+
+    // coord -> nt_index -> count
+    map< int, vector<int> > contig_snps;
 
     string ofn_cov = odir + "/" + contig + ".cov";
     ofstream out_cov(ofn_cov.c_str());
@@ -399,9 +475,40 @@ void save_tables(map<string, int>& contig_map,
 	int count =  (*jt).second;
 	vcount += count;
 	out_poly << contig << "\t" << coord+1 << "\t" << var.type_str() << "\t" << count << "\t" << coverage_contig[coord] << "\t" << mround(100*count/(double)coverage_contig[coord],1) << "\t" << var.seq << endl;
+
+	if (var.type == vtSubstitute) {
+	  // add entry to table if needed
+	  if(contig_snps.find(coord) == contig_snps.end())
+	    contig_snps[coord] = empty;
+
+	  massert(var.seq.length() == 1, "sequence of snp must be of length 1");
+	  int nt_index = char2index(var.seq[0]);
+	  massert(contig_snps[coord][nt_index] == 0, "snp occurs more than once");
+	  contig_snps[coord][nt_index] = count;
+	}
       }
     }
+
+    // output snp table
+    for (map< int, vector<int> >::iterator it = contig_snps.begin(); it != contig_snps.end(); ++it) {
+      int coord = (*it).first;
+      vector<int>& coord_count = (*it).second;
+      int total_count = coverage_contig[coord];
+      char ref_nt = contig_seq[contig][coord];
+      int ref_index = char2index(ref_nt);
+      massert(coord_count[ref_index] == 0, "snp nt cannot be equal to reference nt, internal error");
+      int sum_snp_counts = 0;
+      for (int i=0; i<4; ++i)
+    	sum_snp_counts += coord_count[i];
+      coord_count[ref_index] = total_count - sum_snp_counts;
+      out_snps_table << contig << "\t" << coord+1 << "\t";
+      for (int i=0; i<4; ++i)
+    	out_snps_table << coord_count[i] << "\t";
+      out_snps_table << ref_nt << endl;
+    }
   }
+
+  out_snps_table.close();
 }
 
 int get_of_files(string idir)
@@ -430,6 +537,7 @@ int main(int argc, char **argv)
   init_params(argc, argv, params);
 
   string contig_table_ifn = params.get_string("contigs");
+  string contig_fa_ifn = params.get_string("contigs_fa");
   string contig_field = params.get_string("contig_field");
   int min_score = params.get_int("min_score");
   int min_length = params.get_int("min_length");
@@ -440,9 +548,15 @@ int main(int argc, char **argv)
   string odir_full = params.get_string("odir_full");
   string odir_clipped = params.get_string("odir_clipped");
 
+  string ofn_snp_full = params.get_string("ofn_snp_full");
+  string ofn_snp_clipped = params.get_string("ofn_snp_clipped");
+
   map<string, int> contig_map;
   read_contig_table(contig_table_ifn, contig_field, contig_map);
   cout << "number of contigs: " << contig_map.size() << endl;
+
+  map<string,string> contig_seq;
+  read_fasta(contig_fa_ifn, contig_seq);
 
   // for deletions and substitutes
   map< string, map< int, map <Variation, int> > > full_poly;
@@ -471,14 +585,12 @@ int main(int argc, char **argv)
     string ifn = ent->d_name;
     if (ifn.find("fastq") == string::npos || ifn.find("~") != string::npos)
       continue;
-    process_fasta(idir + "/" + ifn, contig_map,
-		  min_score, min_length, max_edit,
-		  full_poly, clipped_poly, full_coverage, clipped_coverage);
-    //    if (file_count++ > 3)
-    //      break;
+    process_mapping_file(idir + "/" + ifn, contig_map,
+			 min_score, min_length, max_edit,
+			 full_poly, clipped_poly, full_coverage, clipped_coverage);
   }
   closedir (dir);
 
-  save_tables(contig_map, full_poly, full_coverage, odir_full);
-  save_tables(contig_map, clipped_poly, clipped_coverage, odir_clipped);
+  save_tables(contig_map, full_poly, full_coverage, odir_full, ofn_snp_full, contig_seq);
+  save_tables(contig_map, clipped_poly, clipped_coverage, odir_clipped, ofn_snp_clipped, contig_seq);
 }

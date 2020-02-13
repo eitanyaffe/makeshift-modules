@@ -145,3 +145,23 @@ plot.analysis=function(ifn.qa, ifn.ca, ifn.contigs, ifn.info, type, min.complete
     close(fc)
 
 }
+
+plot.analysis.simple=function(ifn.qa, min.complete, max.contam, fdir)
+{
+    qa = load.table(ifn.qa)
+    qa$anchor = qa$Bin.Id
+    anchors = sort(qa$anchor)
+
+    N = length(anchors)
+    width = 1+N*0.15
+
+    fig.start(fdir=fdir, ofn=paste(fdir, "/complete_vs_contaminated_sorted.pdf", sep=""), type="pdf", width=width, height=5)
+    ix = order(qa$Completeness, decreasing=T)
+    plot.init(xlim=c(1,dim(qa)[1]), ylim=c(0,100), xlab="genome", ylab="%", axis.las=1)
+    abline(h=min.complete, col=1, lty=2)
+    abline(h=max.contam, col=2, lty=2)
+    points(1:dim(qa)[1], qa$Contamination[ix], pch=19, col=2)
+    points(1:dim(qa)[1], qa$Completeness[ix], pch=19, col=1)
+    grid()
+    fig.end()
+}

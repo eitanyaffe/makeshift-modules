@@ -3,9 +3,9 @@
 #####################################################################################################
 
 name:=taxa
-units:=taxa.mk seq_compare.mk rep_plots.mk GO.mk
+units:=taxa.mk seq_compare.mk rep_plots.mk GO.mk sc_ncbi.mk export_mags.mk
 preq_variables:=CA_ANCHOR_GENES GENE_REF_ID DATASET_ANCHOR_DIR
-$(call _register_module,taxa,$(units),anchors,$(preq_variables))
+$(call _register_module,taxa,$(units),,)
 
 ###########################################################
 # NCBI taxa files
@@ -25,7 +25,10 @@ NCBI_TAX_DELETED?=$(NCBI_TAX_DIR)/delnodes.dmp
 
 # input table with at least 2 fields: (gene,anchor)
 TAXA_SET_GENES?=$(CA_ANCHOR_GENES)
+TAXA_SET_CONTIGS?=$(CA_ANCHOR_CONTIGS)
 TAXA_SET_FIELD?=anchor
+
+TAXA_CONTIG_FILE?=$(FULL_CONTIG_FILE)
 
 # minimal homology thresholds
 TAX_MIN_IDENTITY?=30
@@ -57,8 +60,7 @@ GENEBANK_VERSION?=May_2018
 GENEBANK_DIR?=/relman01/shared/databases/NCBI/Genomes/$(GENEBANK_VERSION)
 GENEBANK_TABLE?=$(GENEBANK_DIR)/assembly_summary_genbank.txt.2
 
-TAXA_VER?=v1
-# TAXA_ID?=genebank_$(GENEBANK_VERSION)_uniref_$(GENE_REF_ID)_taxonomy_$(NCBI_TAX_ID)_maskCAG_$(CAG_MASK)
+TAXA_VER?=v2
 TAXA_ID?=genebank_$(GENEBANK_VERSION)_$(GENE_REF_ID)_taxonomy_$(NCBI_TAX_ID)_maskCAG_$(CAG_MASK)_$(TAXA_VER)
 
 TAXA_DIR?=$(DATASET_ANCHOR_DIR)/uniref_selected/$(TAXA_ID)
@@ -254,6 +256,11 @@ ELEMENT_VERSION?=v1
 ELEMENT_TAG?=elements_id$(SC_IDENTITY_THRESHOLD)_f$(SC_MIN_CORE_PERCENTAGE)_v$(ELEMENT_VERSION)
 ELEMENT_DIR?=$(SC_DIR)/$(ELEMENT_TAG)
 
+# checkm parameters
+SC_CHECKM_QA?=$(CHECKM_QA)
+SC_CHECKM_MIN_COMPLETE?=$(CHECKM_MIN_COMPLETE)
+SC_CHECKM_MAX_CONTAM?=$(CHECKM_MAX_CONTAM)
+
 # cores
 SC_CORE_BASE_TABLE?=$(ELEMENT_DIR)/core_base.table
 SC_CORE_TABLE?=$(ELEMENT_DIR)/core.table
@@ -268,6 +275,25 @@ SC_ELEMENT_ANCHOR?=$(ELEMENT_DIR)/element2anchor
 SC_GENE_ELEMENT_SHARED?=$(ELEMENT_DIR)/gene2element.shared
 
 SC_ELEMENT_GENE_TABLE?=$(ELEMENT_DIR)/element_gene_table.txt
+
+# all genes associated with elements or cores
+SC_ASSOCIATED_GENES?=$(ELEMENT_DIR)/associated_gene
+
+###########################################################
+# submit MAGs to NCBI
+###########################################################
+
+SC_NCBI_DIR?=$(ELEMENT_DIR)/NCBI
+SC_NCBI_TABLE?=$(SC_NCBI_DIR)/table.txt
+SC_NCBI_GENOME_DIR?=$(SC_NCBI_DIR)/genomes
+
+###########################################################
+# export MAGs
+###########################################################
+
+SC_MAGS_DIR?=$(ELEMENT_DIR)/export_MAGs
+SC_MAGS_TABLE?=$(SC_MAGS_DIR)/MAG_summary.txt
+SC_MAGS_FASTA_DIR?=$(SC_MAGS_DIR)/fasta
 
 ###########################################################
 # plotting params

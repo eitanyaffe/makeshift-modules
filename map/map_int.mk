@@ -3,20 +3,37 @@ units:=map.mk map_bwa.mk coverage.mk
 $(call _register_module,map,$(units),,)
 
 #####################################################################################################
-# mapping
+# input
 #####################################################################################################
 
-# must define input variables
-# MAP_SEQ_FILE: reference fasta sequence
+# input reference fasta sequence
+MAP_SEQ_FILE=$(CONTIG_FASTA)
 
+# input fastq files
+MAP_INPUT_PREFIX?=R
+MAP_PATTERN?=$(LIBRARY_DIR)/$(LIB_ID)/$(MAP_INPUT_PREFIX)*
+MAP_INPUT?=$(wildcard $(MAP_PATTERN))
+
+# write output under here
 MAP_ROOT?=$(OUTPUT_DIR)
 MAP_ROOT_TMP?=$(OUTPUT_TMP_DIR)
+
+#####################################################################################################
+# mapping
+#####################################################################################################
 
 # currently support only bwa
 MAP_TYPE?=bwa
 
-# one index file for each assembly+mapper pair
-INDEX_DIR?=$(MAP_ROOT)/map_$(MAP_TYPE)_index/$(CATALOG_ID)
+MAP_VER?=v2
+BASEMAP_DIR?=$(MAP_ROOT)/map_$(MAP_VER)
+MAP_TMPDIR?=$(MAP_ROOT_TMP)/map_$(MAP_VER)/$(LIB_ID)
+
+# index file
+INDEX_DIR?=$(BASEMAP_DIR)/$(MAP_TYPE)_index
+
+# output here
+MAP_DIR?=$(BASEMAP_DIR)/$(LIB_ID)
 
 # by default use all read
 MAP_SPLIT_TRIM?=F
@@ -28,22 +45,9 @@ MAP_READ_LENGTH2?=$(MAP_READ_LENGTH1)
 # set to zero to include all reads
 MAP_MAX_READS?=10000000
 
-MAP_TAG_BASIC=$(MAP_SPLIT_TRIM)_$(MAP_SPLIT_READ_OFFSET1)_$(MAP_READ_LENGTH1)_$(MAP_SPLIT_READ_OFFSET2)_$(MAP_READ_LENGTH2)_$(MAP_MAX_READS)
-MAP_TAG?=$(MAP_TAG_BASIC)
-
-# map uses two directories
-BASEMAP_DIR?=$(MAP_ROOT)/map/$(MAP_TAG)
-MAP_DIR?=$(BASEMAP_DIR)/$(LIB_ID)
-MAP_TMPDIR?=$(MAP_ROOT_TMP)/map/$(MAP_TAG)/$(LIB_ID)
-
 SPLIT_DIR?=$(MAP_DIR)/split
 MAPPED_DIR?=$(MAP_DIR)/mapped_$(MAP_TYPE)
 PARSE_DIR?=$(MAP_DIR)/parsed
-
-# input fastq files
-MAP_INPUT_PREFIX?=R
-MAP_PATTERN?=$(LIBRARY_DIR)/$(LIB_ID)/$(MAP_INPUT_PREFIX)*
-MAP_INPUT?=$(wildcard $(MAP_PATTERN))
 
 # split input reads before mapping
 MAP_SPLIT_READS_PER_FILE?=1000000
