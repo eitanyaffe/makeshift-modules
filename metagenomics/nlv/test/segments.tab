@@ -1,0 +1,5 @@
+item	contig	start	end
+i1	c1	1	10
+i1	c1	10	20
+i1	c1	20	30
+i1	c1	80	90
