@@ -12,7 +12,7 @@
 
 #include "util.h"
 #include "Params.h"
-#include "Variation.h"
+#include "VariationSet.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // main functions
@@ -40,11 +40,11 @@ void dump_init_params(const char* name, int argc, char **argv, Parameters& param
 void dump_cov(VariationSet& varset, string fn)
 {
   map<string, vector<int> >& covs = varset.get_covs();
-  
+
   cout << "saving coverage vector to table: " << fn << endl;
   ofstream out(fn.c_str(), ios::out | ios::binary);
   massert(out.is_open(), "could not open file %s", fn.c_str());
-  
+
   out << "contig" << "\t" << "coord" << "\t" << "count"  << endl;
   for (map<string, vector<int> >::iterator it=covs.begin(); it!=covs.end(); ++it) {
     string contig = (*it).first;
@@ -58,14 +58,14 @@ void dump_cov(VariationSet& varset, string fn)
 void dump_nlv(VariationSet& varset, string fn)
 {
   map< string, map< int, map <Variation, int> > >& vars = varset.get_vars();
-  
+
   cout << "saving nlv to table: " << fn << endl;
   ofstream out(fn.c_str(), ios::out | ios::binary);
   massert(out.is_open(), "could not open file %s", fn.c_str());
 
   // header
-  out << "contig" << "\t" << "coord" << "\t" << "type" << "\t" << "seq" << "\t" << "delete_length" << "\t" << "count"  << endl;
-  
+  out << "contig" << "\t" << "coord" << "\t" << "var" << "\t" << "count"  << endl;
+
   for (map< string, map< int, map <Variation, int> > >::iterator it=vars.begin(); it!=vars.end(); ++it) {
     string contig = (*it).first;
     map< int, map <Variation, int> >& table_contig = (*it).second;
@@ -76,7 +76,7 @@ void dump_nlv(VariationSet& varset, string fn)
       for (map <Variation, int>::iterator xt=xmap.begin(); xt!=xmap.end(); ++xt) {
 	Variation var = (*xt).first;
 	int count = (*xt).second;
-	out << contig << "\t" << coord+1 << "\t" << var.type_str() << "\t" << (var.seq == "" ? "-" : var.seq) << "\t" << var.delete_length << "\t" << count  << endl;
+	out << contig << "\t" << coord+1 << "\t" << var.to_string() << "\t" << count  << endl;
       }
     }
   }
@@ -97,6 +97,6 @@ int dump_main(const char* name, int argc, char **argv)
 
   dump_cov(varset, ofn_cov);
   dump_nlv(varset, ofn_nlv);
-  
+
   return 0;
 }

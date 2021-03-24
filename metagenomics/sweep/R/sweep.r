@@ -59,17 +59,27 @@ get.genes=function(ifn.elements, ifn.gene2contig, ifn.contig2bin, ifn.uniref, of
 
     result = NULL
     # singlton contigs
-    dfs = df[df$element_is_singleton,]
-    uni.single = uniref[is.element(uniref$contig, dfs$element),]
-    uni.single$element = uni.single$contig
-    uni.single$type = "singleton"
+
+    if (any(df$element_is_singleton)) {
+        dfs = df[df$element_is_singleton,]
+        uni.single = uniref[is.element(uniref$contig, dfs$element),]
+        uni.single$element = uni.single$contig
+        uni.single$type = "singleton"
+    } else {
+        uni.single = NULL
+    }
 
     # elements
-    dfe = df[!df$element_is_singleton,]
-    contig2bin = contig2bin[is.element(contig2bin$bin,dfe$element),]
-    uni.element = uniref[is.element(uniref$contig, contig2bin$contig),]
-    uni.element$element = contig2bin$bin[match(uni.element$contig, contig2bin$contig)]
-    uni.element$type = "element"
+
+    if (any(!df$element_is_singleton)) {
+        dfe = df[!df$element_is_singleton,]
+        contig2bin = contig2bin[is.element(contig2bin$bin,dfe$element),]
+        uni.element = uniref[is.element(uniref$contig, contig2bin$contig),]
+        uni.element$element = contig2bin$bin[match(uni.element$contig, contig2bin$contig)]
+        uni.element$type = "element"
+    } else {
+        uni.element = NULL
+    }
 
     result = rbind(uni.element, uni.single)
     save.table(result, ofn)

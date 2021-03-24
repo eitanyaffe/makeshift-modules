@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 #include "util.h"
-#include "Variation.h"
+#include "VariationSet.h"
 #include "Params.h"
 
 struct Library {
@@ -71,12 +71,12 @@ void cmp_save_keys(vector< VariationSet >& sets,
 		   map< string, map< int, set< Variation > > >& keys,
 		   ofstream& out)
 {
-  out << "contig" << "\t" << "coord" << "\t" << "type" << "\t" << "seq" << "\t" << "delete_length" << "\t";
+  out << "contig" << "\t" << "coord" << "\t" << "var";
   for (unsigned int i=0; i<sets.size(); ++i) {
     out << "\t" << set_ids[i];
   }
   out << endl;
-  
+
   // go over all keys
   for (map< string, map< int, set <Variation> > >::iterator it=keys.begin(); it!=keys.end(); ++it) {
     string contig = (*it).first;
@@ -88,21 +88,21 @@ void cmp_save_keys(vector< VariationSet >& sets,
       ////////////////////////////////////////////////////////////////////////////////
       // print ref support
       ////////////////////////////////////////////////////////////////////////////////
-      
-      out << contig << "\t" << coord+1 << "\t" << "REF" << "\t" << "NA" << "\t" << "0";
+
+      out << contig << "\t" << coord+1 << "\t" << "REF";
       for (unsigned int i=0; i<sets.size(); ++i) {
 	int count = sets[i].get_ref_count(contig, coord);
 	out << "\t" << count;
       }
       out << endl;
-      
+
       ////////////////////////////////////////////////////////////////////////////////
       // print variant support
       ////////////////////////////////////////////////////////////////////////////////
 
       for (set <Variation>::iterator xt=keys_coord.begin(); xt!=keys_coord.end(); ++xt) {
 	Variation var = (*xt);
-	out << contig << "\t" << coord+1 << "\t" << var.type_str() << "\t" << (var.seq == "" ? "NA" : var.seq) << "\t" << var.delete_length;
+	out << contig << "\t" << coord+1 << "\t" << var.to_string();
 	for (unsigned int i=0; i<sets.size(); ++i) {
 	  int count = sets[i].get_var_count(contig, coord, var);
 	  out << "\t" << count;
@@ -128,18 +128,18 @@ int compare_main(const char* name, int argc, char **argv)
   //////////////////////////////////////////////////////////////////
   // first round: collect keys
   //////////////////////////////////////////////////////////////////
-  
+
   vector< VariationSet > sets(libs.size());
   vector< string > set_ids(libs.size());
-  
+
   map< string, map< int, set< Variation > > > keys;
   for (unsigned int i=0; i<libs.size(); ++i) {
     string id = libs[i].id;
     string path = libs[i].path;
-    
+
     set_ids[i] = id;
     VariationSet& varset_i = sets[i];
-    
+
     varset_i.load(path);
     varset_i.collect_var_keys(keys);
   }
@@ -147,11 +147,11 @@ int compare_main(const char* name, int argc, char **argv)
   //////////////////////////////////////////////////////////////////
   // second round: save results to table
   //////////////////////////////////////////////////////////////////
-  
+
   cout << "saving result to table: " << ofn << endl;
   ofstream out(ofn.c_str(), ios::out | ios::binary);
   massert(out.is_open(), "could not open file %s", ofn.c_str());
-  
+
   cmp_save_keys(sets, set_ids, keys, out);
 
   out.close();

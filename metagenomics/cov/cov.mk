@@ -5,7 +5,7 @@
 
 COV_BREAK_DONE?=$(COV_ANALYSIS_DIR)/.done_break
 $(COV_BREAK_DONE): $(COV_TABLE_DONE)
-	$(call _start,$(COV_CONTIG_DIR))
+	$(call _start,$(COV_ANALYSIS_DIR))
 	$(COV_BIN) refine \
 		-ifn $(COV_LIB_TABLE) \
 		-outlier_fraction $(COV_OUTLIER_FRACTION) \

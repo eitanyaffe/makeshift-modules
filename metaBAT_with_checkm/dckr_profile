@@ -1,1 +1,0 @@
-DOCKER_RUN_USER_OPTS="-v /relman01:/relman01 -v /relman02:/relman02 -v /relman03:/relman03 -v /relman04:/relman04 -v /home:/home"

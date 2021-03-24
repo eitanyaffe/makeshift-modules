@@ -10,14 +10,19 @@ $(call _register_module,assembly,$(units),)
 # general parameters
 #####################################################################################################
 
+# used to be 147 and 300
+ASSEMBLY_MAX_KMER?=77
+ASSEMBLY_MIN_CONTIG?=200
+ASSEMBLY_TAG?=_$(ASSEMBLY_MAX_KMER)_$(ASSEMBLY_MIN_CONTIG)
+
 ASSEMBLER?=megahit
 ASSEMBLY_ID?=assembly1
 ASSEMBLY_BASE_DIR?=$(OUTPUT_DIR)/assembly/$(ASSEMBLY_ID)
-ASSEMBLY_DIR?=$(ASSEMBLY_BASE_DIR)/$(ASSEMBLER)
+ASSEMBLY_DIR?=$(ASSEMBLY_BASE_DIR)/$(ASSEMBLER)$(ASSEMBLY_TAG)
 
 # shortcuts
-MEGAHIT_DIR?=$(ASSEMBLY_BASE_DIR)/megahit
-SPADES_DIR?=$(ASSEMBLY_BASE_DIR)/spades
+MEGAHIT_DIR?=$(ASSEMBLY_DIR)
+SPADES_DIR?=$(ASSEMBLY_DIR)
 
 # by defaulty all libs are used for the assebmly
 ASSEMBLY_LIB_IDS?=$(LIB_IDS)
@@ -58,14 +63,15 @@ SPADE_MEM?=500
 # megahit.mk
 #####################################################################################################
 
-MEGAHIT_BIN?=/home/dethlefs/bin/megahit
+#MEGAHIT_BIN?=/home/dethlefs/bin/megahit
+MEGAHIT_BIN?=sudo dr run -i vout/megahit:release-v1.2.9 megahit $@
 
 MEGAHIT_MEMORY_CAP?=0.5
 
-MEGAHIT_MIN_CONTIG_LENGTH?=300
+MEGAHIT_MIN_CONTIG_LENGTH?=$(ASSEMBLY_MIN_CONTIG)
 
 MEGAHIT_MIN_KMER?=27
-MEGAHIT_MAX_KMER?=147
+MEGAHIT_MAX_KMER?=$(ASSEMBLY_MAX_KMER)
 MEGAHIT_KMER_STEP?=10
 
 # other parameters here:

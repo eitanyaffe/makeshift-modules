@@ -15,12 +15,12 @@ $(BLAST_INDEX_DONE):
 BLAST_DONE?=$(BLAST_DIR)/.done_raw
 $(BLAST_DONE): $(BLAST_INDEX_DONE)
 	$(call _start,$(BLAST_DIR))
-	$(call _time,$(BLAST_DIR),blast) $(DIAMOND_BIN) blastp \
+	$(call _time,$(BLAST_DIR),blast) $(DIAMOND_BIN) $(DIAMOND_COMMAND) \
 		-b $(DIAMOND_BLOCK_SIZE) \
 		-c $(DIAMOND_INDEX_CHUNKS) \
 		-d $(DIAMOND_INDEX) \
 		-p $(DIAMOND_THREADS) \
-		-q $(BLAST_QUERY_FASTA) \
+		-q $(BLAST_QUERY) \
 		-e $(DIAMOND_EVALUE) \
 		$(DIAMOND_BLASTP_PARAMS) \
 		-a $(BLAST_RESULT_RAW)
@@ -44,4 +44,7 @@ $(BLAST_PARSE_DONE): $(BLAST_SAM_DONE)
 		aa \
 		$(BLAST_RESULT)
 	$(_end_touch)
-blast_aa: $(BLAST_PARSE_DONE)
+genes_diamond_blast: $(BLAST_PARSE_DONE)
+
+# no query table for reads, end earlier 
+reads_diamond_blast: $(BLAST_SAM_DONE)

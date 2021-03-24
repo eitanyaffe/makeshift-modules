@@ -7,6 +7,8 @@ plot_bin_trj:
 		ifn.bottom05=$(TRJ_PATTERN_BOTTOM05) \
 		ifn.bottom25=$(TRJ_PATTERN_BOTTOM25) \
 		ifn.detection=$(TRJ_CONTIG_NORM_DETECTION) \
+		ifn.selected.bins=$(TRJ_SELECTED_BIN_TABLE) \
+		select.bins=$(TRJ_SELECTED_BINS) \
 		base.ids=$(TRJ_BASE_IDS) \
 		disturb.ids=$(TRJ_MID_IDS) \
 		lib.ids=$(TRJ_IDS) \

@@ -40,6 +40,67 @@ tempo_lib: $(TEMPO_LIB_INPUT_DONE)
 
 ##########################################
 ##########################################
+else ifeq ($(TEMPO_INPUT_TYPE),hmd_bio)
+##########################################
+##########################################
+
+COHORT_INIT_DONE?=$(TEMPO_COHORT_DIR)/.done_init
+$(COHORT_INIT_DONE):
+	$(call _start,$(TEMPO_COHORT_DIR))
+	$(_R) $(_md)/R/create_cohort_tables.r create.cohort.table \
+		sample.ifn=$(TEMPO_SAMPLE_TABLE_IN) \
+		dna.seq.ifn=$(TEMPO_DNA_SEQUENCED_IN) \
+		rna.seq.ifn=$(TEMPO_RNA_SEQUENCED_IN) \
+		dna.stats.ifn=$(TEMPO_DNA_STATS_IN) \
+		rna.stats.ifn=$(TEMPO_RNA_STATS_IN) \
+		max.dna.reads=$(TEMPO_MAX_READS_DNA_LIB) \
+		max.rna.reads=$(TEMPO_MAX_READS_RNA_LIB) \
+		ofn=$(TEMPO_COHORT_SAMPLE_TABLE_BASE)
+	$(_end_touch)
+tempo_cohort_init: $(COHORT_INIT_DONE)
+
+COHORT_SELECT_DONE?=$(TEMPO_COHORT_DIR)/.done_select
+$(COHORT_SELECT_DONE): $(COHORT_INIT_DONE)
+	$(_start)
+	$(_R) $(_md)/R/create_cohort_tables.r select.cohort.table \
+		ifn=$(TEMPO_COHORT_SAMPLE_TABLE_BASE) \
+		min.dna.reads=$(TEMPO_MIN_READS_DNA_LIB) \
+		min.rna.reads=$(TEMPO_MIN_READS_RNA_LIB) \
+		ofn.subjects=$(TEMPO_COHORT_SUBJECT_TABLE) \
+		ofn.samples=$(TEMPO_COHORT_SAMPLE_TABLE)
+	$(_end_touch)
+tempo_cohort_select: $(COHORT_SELECT_DONE)
+
+# subject init
+SUBJECT_INIT_DONE?=$(SUBJECT_DIR)/.done_subject_init
+$(SUBJECT_INIT_DONE): $(COHORT_SELECT_DONE)
+	$(call _start,$(SUBJECT_DIR))
+	$(_R) $(_md)/R/create_cohort_tables.r subject.init \
+		ifn=$(TEMPO_COHORT_SAMPLE_TABLE) \
+		subject.id=$(SUBJECT_ID) \
+		ofn.dna.lib.table=$(SUBJECT_DNA_LIB_TABLE) \
+		ofn.dna.lib.ids=$(SUBJECT_DNA_LIB_IDS_FILE) \
+		ofn.rna.lib.table=$(SUBJECT_RNA_LIB_TABLE) \
+		ofn.rna.lib.ids=$(SUBJECT_RNA_LIB_IDS_FILE) \
+		ofn.defs=$(SUBJECT_SAMPLE_DEFS)
+	$(_end_touch)
+tempo_subject_init: $(SUBJECT_INIT_DONE)
+
+SUBJECT_IMPORT_LIB_DONE?=$(LIB_DIR)/.done_import_lib
+$(SUBJECT_IMPORT_LIB_DONE): $(SUBJECT_INIT_DONE)
+	$(call _start,$(SUBJECT_DIR))
+	$(_R) $(_md)/R/create_cohort_tables.r import.lib \
+		ifn=$(TEMPO_COHORT_SAMPLE_TABLE) \
+		type=$(TEMPO_LIB_TYPE) \
+		lib.id=$(LIB_ID) \
+		idir.dna=$(TEMPO_DNA_LIB_DIR_IN) \
+		idir.rna=$(TEMPO_RNA_LIB_DIR_IN)/final \
+		odir=$(LIB_DIR)/final
+	$(_end_touch)
+tempo_lib: $(SUBJECT_IMPORT_LIB_DONE)
+
+##########################################
+##########################################
 else ifeq ($(TEMPO_INPUT_TYPE),pass)
 ##########################################
 ##########################################

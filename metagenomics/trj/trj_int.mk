@@ -16,7 +16,7 @@ TRJ_CONTIG_TABLE?=$(CONTIG_TABLE)
 TRJ_BIN_TABLE_INPUT?=$(BINS_TABLE)
 
 # map contig to bin
-TRJ_CONTIG_BIN?=$(BINS_CONTIG_TABLE_ASSOCIATED)
+TRJ_CONTIG_BIN?=$(C2B_TABLE)
 
 # mapped reads are here
 TRJ_BASEMAP_DIR?=$(BASEMAP_DIR)
@@ -39,11 +39,12 @@ TRJ_ANNOTATE?=T
 # output
 TRJ_BASEDIR?=$(ASSEMBLY_DIR)
 
-TRJ_VER?=v3
+TRJ_VER?=v5
 TRJ_DIR?=$(TRJ_BASEDIR)/trj_$(TRJ_VER)
 
 # figures
-TRJ_FDIR?=$(BASE_FDIR)/trj
+TRJ_BASE_FDIR?=$(BASE_FDIR)
+TRJ_FDIR?=$(TRJ_BASE_FDIR)/trj/$(TRJ_VER)
 
 #####################################################################################################
 # contig summary
@@ -82,3 +83,7 @@ TRJ_N_CLASSES?=15
 TRJ_CLASS_MAX_HEIGHT?=0.15
 TRJ_CLASS_TYPE=count
 TRJ_BIN_ORDER?=$(TRJ_DIR)/bin_order
+
+# limit plot to specified bins
+TRJ_SELECTED_BINS?=F
+TRJ_SELECTED_BIN_TABLE?=$(STRAIN_BIN_TABLE_LIMITED)

@@ -2,7 +2,8 @@
 # register module
 #####################################################################################################
 
-units=genes_prodigal.mk genes_uniref.mk genes_blast_aa.mk genes_blast_nt.mk genes_GO.mk genes_bins.mk
+units=genes_prodigal.mk genes_uniref.mk genes_diamond.mk genes_blast_nt.mk genes_GO.mk \
+genes_bins.mk genes_rna.mk
 $(call _register_module,genes,$(units),,)
 
 #####################################################################################################
@@ -12,9 +13,6 @@ $(call _register_module,genes,$(units),,)
 # input fasta
 GENES_FASTA_INPUT?=$(CONTIG_FASTA)
 
-# uniref/diamond database can be shared across projects
-UNIREF_DIAMOND_DB_DIR?=$(BASE_OUTPUT_DIR)/diamond_db
-
 # GO database can be shared across projects
 GO_BASE_DIR?=$(BASE_OUTPUT_DIR)/GO
 
@@ -22,10 +20,12 @@ GO_BASE_DIR?=$(BASE_OUTPUT_DIR)/GO
 # prodigal.mk
 #####################################################################################################
 
-PRODIGAL_BIN?=/home/dethlefs/Prodigal_2.6.3/prodigal
+#PRODIGAL_BIN?=/home/dethlefs/Prodigal_2.6.3/prodigal
+PRODIGAL_BIN?=sudo dr run -i nanozoo/prodigal prodigal
 
 # output directory
-PRODIGAL_DIR?=$(ASSEMBLY_DIR)/prodigal
+GENES_VER?=v1
+PRODIGAL_DIR?=$(ASSEMBLY_DIR)/prodigal/$(GENES_VER)
 
 # parameters: https://github.com/hyattpd/prodigal/wiki/cheat-sheet
 PRODIGAL_SELECT_PROCEDURE?=meta
@@ -74,24 +74,28 @@ DIAMOND_BLOCK_SIZE?=20
 DIAMOND_INDEX_CHUNKS?=1
 DIAMOND_THREADS?=40
 DIAMOND_EVALUE?=0.001
-DIAMOND_BLASTP_PARAMS?=--sensitive
+DIAMOND_BLAST_PARAMS?=--sensitive
 
 #####################################################################################################
 # uniref
 #####################################################################################################
 
 # UniRef from ftp://ftp.uniprot.org/pub/databases/uniprot/uniref
-GENE_REF_ID?=2019_03
+GENE_REF_ID?=2020_07
 UNIREF_INPUT_DIR?=/relman01/shared/databases/UniRef100/$(GENE_REF_ID)
 GENE_REF_IFN?=$(UNIREF_INPUT_DIR)/uniref100.fasta
 GENE_REF_XML_IFN=$(UNIREF_INPUT_DIR)/uniref100.xml
 
 # UniProt from ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.xml.gz
-UNIPROT_ID?=2019_03
+UNIPROT_ID?=2020_07
 UNIPROT_XML_IFN?=/relman01/shared/databases/UniProt/versions/$(UNIPROT_ID)/uniprot_sprot.xml
 
-# uniref diamond database
-UNIREF_DIAMOND_DB?=$(UNIREF_DIAMOND_DB_DIR)/$(GENE_REF_ID)
+# uniref/diamond database can be shared across projects
+# UNIREF_DIAMOND_DB_DIR?=$(BASE_OUTPUT_DIR)/diamond_db
+# UNIREF_DIAMOND_DB?=$(UNIREF_DIAMOND_DB_DIR)/$(GENE_REF_ID)
+
+UNIREF_DIAMOND_DB_DIR?=$(UNIREF_INPUT_DIR)/diamond
+UNIREF_DIAMOND_DB?=$(UNIREF_DIAMOND_DB_DIR)/index
 
 # uniref table
 UNIREF_TABLE_DIR?=$(UNIREF_INPUT_DIR)/files
@@ -102,7 +106,8 @@ UNIREF_GENE_TABLE?=$(UNIREF_TABLE_DIR)/genes
 UNIREF_TAX_LOOKUP?=$(UNIREF_TABLE_DIR)/tax_lookup
 
 # uniref search result
-UNIREF_ODIR_BASE?=$(ASSEMBLY_DIR)/uniref
+UNIREF_VER?=v1
+UNIREF_ODIR_BASE?=$(ASSEMBLY_DIR)/uniref/$(UNIREF_VER)
 UNIREF_DIR?=$(UNIREF_ODIR_BASE)/$(GENE_REF_ID)
 UNIREF_RAW_OFN?=$(UNIREF_DIR)/raw_table
 UNIREF_OFN_UNIQUE?=$(UNIREF_DIR)/table_uniq
@@ -147,4 +152,25 @@ UNIPARC2UNIPROT_LOOKUP?=$(GO_DIR)/uniparc2uniprot_lookup
 # gene to bin
 #####################################################################################################
 
+# contig-bin table
+GENES_C2B_TABLE?=$(C2B_TABLE)
 GENE2BIN_TABLE?=$(PRODIGAL_DIR)/gene2bin
+
+#####################################################################################################
+# RNA uniref analysis
+#####################################################################################################
+
+# input fastq
+# RNA_UNIREF_INPUT?=$(PAIRED_R1) $(PAIRED_R2) 
+RNA_UNIREF_QUERY?=$(PAIRED_R1)
+
+RNA_UNIREF_ODIR_BASE?=$(ASSEMBLY_DIR)/rna_uniref/$(UNIREF_VER)
+RNA_UNIREF_DIR?=$(RNA_UNIREF_ODIR_BASE)/$(GENE_REF_ID)
+
+# united input file
+# RNA_UNIREF_QUERY?=$(RNA_UNIREF_DIR)/reads.fq
+
+# result
+RNA_UNIREF_SAM?=$(RNA_UNIREF_DIR)/uniref.sam
+RNA_UNIREF_UNIQUE?=$(RNA_UNIREF_DIR)/unique.sam
+

@@ -19,7 +19,7 @@
 
 #include "util.h"
 #include "Params.h"
-#include "Variation.h"
+#include "VariationSet.h"
 
 #define massert_range(v, coord, id) massert(coord >= 0 && coord < (int)v.size(), "coord %d outside vector of length %d, id: %s", coord, (int)v.size(), id.c_str());
 #define INCREMENT(v, coord, var, length) \
@@ -53,7 +53,7 @@ void process_mapping_file(string fn,
 {
   map< string, map< int, map <Variation, int> > >& vars = varset.get_vars();
   map<string, vector<int> >& covs = varset.get_covs();
-  
+
   cout << "reading table: " << fn << endl;
   ifstream in(fn.c_str());
   massert(in.is_open(), "could not open file %s", fn.c_str());
@@ -138,21 +138,31 @@ void process_mapping_file(string fn,
 
     if (clipped && discard_clipped)
       continue;
-    
-    map< int, map <Variation, int> >& contig_map = vars[contig];
+
+    // coord->variation
+    // establish what are all the variations the read contains
+    map< int, Variation> read_vars;
 
     // dangle left
     if (strand ? clip_start : clip_end) {
       int coord = strand ? left_coord : right_coord;
-      Variation var(strand ? vtDangleLeft : vtDangleRight);
-      INCREMENT(contig_map, coord, var, contig_length);
+      if (strand)
+	read_vars[coord].add_dangle_left();
+      else
+	read_vars[coord].add_dangle_right();
+      // Variation var(strand ? vtDangleLeft : vtDangleRight);
+      // INCREMENT(contig_map, coord, var, contig_length);
     }
 
     // dangle right
     if (!strand ? clip_start : clip_end) {
       int coord = strand ? right_coord : left_coord;
-      Variation var(strand ? vtDangleRight : vtDangleLeft);
-      INCREMENT(contig_map, coord, var, contig_length);
+      if (strand)
+	read_vars[coord].add_dangle_right();
+      else
+	read_vars[coord].add_dangle_left();
+      // Variation var(strand ? vtDangleRight : vtDangleLeft);
+      // INCREMENT(contig_map, coord, var, contig_length);
     }
 
     // substitutes
@@ -174,8 +184,9 @@ void process_mapping_file(string fn,
       string nt = ssub_fields[3];
       if (nt == "N")
 	continue;
-      Variation var(vtSubstitute, nt);
-      INCREMENT(contig_map, coord, var, contig_length);
+      read_vars[coord].add_sub(nt);
+      // Variation var(vtSubstitute, nt);
+      // INCREMENT(contig_map, coord, var, contig_length);
     }
 
     // deletions
@@ -193,8 +204,9 @@ void process_mapping_file(string fn,
       }
       massert(start_coord >= left_coord && start_coord <= right_coord, "coord %d out of range, left=%d, right=%d\n", start_coord, left_coord, right_coord);
       int del_length = atoi(ssub_fields[1].c_str());
-      Variation var(vtDelete, "NA", del_length);
-      INCREMENT(contig_map, start_coord, var, contig_length);
+      read_vars[start_coord].add_delete(del_length);
+      // Variation var(vtDelete, "NA", del_length);
+      // INCREMENT(contig_map, start_coord, var, contig_length);
     }
 
     // insertions
@@ -213,8 +225,17 @@ void process_mapping_file(string fn,
       massert(coord >= left_coord && coord <= right_coord, "coord %d out of range, left=%d, right=%d\n", coord, left_coord, right_coord);
       // string seq = (strand ? ssub_fields[2] : reverse_complement(ssub_fields[2]));
       string seq = ssub_fields[2];
-      Variation var(vtInsert, seq);
-      INCREMENT(contig_map, coord, var, contig_length);
+      read_vars[coord].add_insert(seq);
+      // Variation var(vtInsert, seq);
+      // INCREMENT(contig_map, coord, var, contig_length);
+    }
+
+    // increment for all variations identified in read
+    map< int, map <Variation, int> >& coord_map = vars[contig];
+    for (map< int, Variation>::iterator it=read_vars.begin(); it != read_vars.end(); ++it) {
+      int coord = (*it).first;
+      Variation var = (*it).second;
+      INCREMENT(coord_map, coord, var, contig_length);
     }
 
     // coverage
@@ -329,6 +350,9 @@ int construct_main(const char* name, int argc, char **argv)
       continue;
     process_mapping_file(idir + "/" + ifn, contig_map,
 			 discard_clipped, min_score, min_length, max_edit, varset);
+
+    // if (file_count++ == 3)
+    //  break;
   }
   closedir (dir);
 

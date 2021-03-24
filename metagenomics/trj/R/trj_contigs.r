@@ -27,7 +27,7 @@ compute.contig.trj=function(ifn, min.detected, map.dir, ids, ofn.observed, ofn.e
 
     # uniform expected values
     expected.table = data.frame(contig=contigs$contig)
-    total.length = sum(contigs$length)
+    total.length = sum(as.numeric(contigs$length))
     for (i in 2:dim(observed.table)[2]) {
         total.reads = sum(observed.table[,i])
         expected = total.reads * (contigs$length / total.length)

@@ -46,7 +46,7 @@ make.from.raw=function(ids, target, is.dry)
     for (id in ids) {
         command = sprintf("make %s LIB_ID=%s", target, id)
         if (is.dry) {
-            command = paste(command, "-n")
+            command = paste(command, "-t")
         }
         if (system(command) != 0)
             stop(paste("error in command:", command))

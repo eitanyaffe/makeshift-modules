@@ -1,5 +1,6 @@
 plot.bin.patterns=function(
     ifn.order, ifn.median, ifn.top95, ifn.top75, ifn.bottom25, ifn.bottom05,
+    ifn.selected.bins, select.bins,
     ifn.detection, lib.ids, base.ids, disturb.ids, sample.defs.ifn, subject.id, annotate.libs, fdir)
 {
     df = load.table(ifn.order)
@@ -75,8 +76,18 @@ plot.bin.patterns=function(
     patterns = patterns[hh$order,]
     base = base[hh$order]
 
-    bins = df$bin
 
+    # limit bins if requested
+    if (select.bins) {
+        sbins = load.table(ifn.selected.bins)$bin
+        ix = is.element(df$bin, sbins)
+        df = df[ix,]
+        cc = cc[ix,ix]
+        patterns = patterns[ix,]
+        base = base[ix]
+    }
+
+    bins = df$bin
     N = length(bins)
 
     # compute annotation segments
@@ -86,7 +97,7 @@ plot.bin.patterns=function(
             ix = match(ids, colnames(xx))
             xx = data.frame(label=label, start=min(ix), end=max(ix)+1)
             if (!is.na(xx$start) && !is.na(xx$end)) ann <<- rbind(ann, xx)
-    }
+        }
         if (is.element("Meas_Type", colnames(sample.defs))) {
             sample.defs = sample.defs[sample.defs$Meas_Type == "MetaG",]
         }
@@ -174,6 +185,8 @@ plot.bin.patterns=function(
     abs.panel = make.color.panel(colors=abs.colors)
     wlegend2(fdir=fdir, panel=abs.panel, breaks=abs.breaks, title="bin_trend_abs")
 
+    # y-gap between bins
+    gap = 0
     plot.mat=function(mat, is.relative) {
 
         sm = matrix2smatrix(mat)
@@ -184,36 +197,52 @@ plot.bin.patterns=function(
             sm$col = ifelse(sm$value != min.drop, abs.panel[vals.to.cols(sm$value, abs.breaks)], "black")
         }
 
-        rel.str = ifelse(is.relative, "relative", "absolute")
-        fig.start(fdir=fdir, type="pdf", ofn=paste(fdir, "/bin_trend_", rel.str, ".pdf", sep=""), height=1+N*0.2, width=1+0.6*M)
-        par(mai=c(2, 1, 1, 3))
-        plot.new()
-        plot.window(xlim=c(0,M+16), ylim=c(1,N))
-        title(main=subject.id)
-        rect(sm$j-1+xoffset, sm$i-1, sm$j+xoffset, sm$i, col=sm$col, border=NA)
-
-        if (is.relative) {
-            rect(xleft=1.5, xright=2.5, ybottom=1:N-1, ytop=1:N, col=base.panel[vals.to.cols(log10(base), base.breaks)], border=NA)
-            axis(side=1, labels="base", at=2, las=2)
+        ww = 1+0.3*M
+        hh = 1+N*0.2
+        # !!!
+        if (select.bins) {
+            ww = 2
+            hh = 12.5
         }
 
-        text(x=M+4, y=1:N-0.5, adj=0, labels=bins, cex=0.8)
-        axis(side=1, labels="bin", at=M+4.5, las=2)
+        rel.str = ifelse(is.relative, "relative", "absolute")
+        fig.start(fdir=fdir, type="pdf", ofn=paste(fdir, "/bin_trend_", rel.str, ".pdf", sep=""), height=hh, width=ww)
+        par(mai=c(2, 0.5, 0.5, 0.5))
+        plot.new()
+        plot.window(xlim=c(0,M+16), ylim=c(1,N))
+        title(main=paste(subject.id, length(bins)))
+        rect(sm$j-1+xoffset, sm$i-1+gap, sm$j+xoffset, sm$i-gap, col=sm$col, border=NA)
+
+        if (select.bins) {
+            segments(x0=1, x1=3, y0=1:N-0.5, y1=1:N-0.5)
+            text(x=4, y=1:N-0.5, pos=2, labels=rev(seq_along(bins)), cex=0.5, xpd=T)
+
+        } else {
+
+
+            if (is.relative) {
+                rect(xleft=1.5, xright=2.5, ybottom=1:N-1, ytop=1:N, col=base.panel[vals.to.cols(log10(base), base.breaks)], border=NA)
+                axis(side=1, labels="base", at=2, las=2)
+            }
+
+            text(x=M+4, y=1:N-0.5, adj=0, labels=bins, cex=0.5)
+            axis(side=1, labels="bin", at=M+4.5, las=2)
+        }
+
+        # plot annotations
+        if (!is.null(ann)) {
+            rect(ann$start-1+xoffset, -1, ann$end-1+xoffset, -0.5, col="darkgreen", border=NA)
+            text(x=(ann$start+ann$end-2)/2+xoffset, y=-0.5, labels=ann$label, pos=1)
+            abline(v=ann$start-1+xoffset, lty=2, col="darkgreen")
+            abline(v=ann$end-1+xoffset, lty=2, col="darkgreen")
+        }
+
+        axis(side=1, labels=lib.labels, at=1:M-0.5+3, las=2)
+        fig.end()
     }
+
     plot.mat(patterns, is.relative=T)
     plot.mat(patterns.abs, is.relative=F)
-
-
-    # plot annotations
-    if (!is.null(ann)) {
-        rect(ann$start-1+xoffset, -1, ann$end-1+xoffset, -0.5, col="darkgreen", border=NA)
-        text(x=(ann$start+ann$end-2)/2+xoffset, y=-0.5, labels=ann$label, pos=1)
-        abline(v=ann$start-1+xoffset, lwd=1)
-        abline(v=ann$end-1+xoffset, lwd=2)
-    }
-
-    axis(side=1, labels=lib.labels, at=1:M-0.5+3, las=2)
-    fig.end()
 
     ################################################################
     # plot detailed line plots

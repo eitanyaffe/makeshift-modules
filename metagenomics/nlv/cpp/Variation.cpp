@@ -1,19 +1,21 @@
 #include <cstring>
 #include "Variation.h"
+#include "util.h"
 using namespace std;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Variation
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Variation::Variation(VariType _type, string _seq, int _delete_length) : type(_type), seq(_seq), delete_length(_delete_length) {};
+Variation::Variation() : m_type_bitmap(0), m_sub_nt(0), m_insert_seq(), m_delete_length(0) {};
 
-Variation::Variation(string str)
+Variation::Variation(string str) : Variation()
 {
-  set_from_string(str);
+  from_string(str);
 }
 
-string Variation::type_str() {
+string Variation::type_to_string(const VariType type)
+{
   switch(type) {
   case vtNone: return "none";
   case vtSubstitute: return "sub";
@@ -21,11 +23,12 @@ string Variation::type_str() {
   case vtInsert: return "ins";
   case vtDangleLeft: return "dangleLeft";
   case vtDangleRight: return "dangleRight";
+  default: mexit("invalid type: vtCount");
   }
   return "";
 }
 
-VariType Variation::str_to_type(const string str) {
+VariType Variation::string_to_type(const string str) {
   if (str == "none")
     return vtNone;
   if (str == "sub")
@@ -42,494 +45,178 @@ VariType Variation::str_to_type(const string str) {
   return vtNone;
 }
 
-string Variation::str() {
-  string result = type_str();
-  switch(type) {
-  case vtSubstitute:
-  case vtInsert:
-    result += "_" + seq;
+void Variation::add_sub(string nt)
+{
+  massert(nt.size() == 1, "expecting string of length 1, found: %s", nt.c_str());
+  set_type(vtSubstitute);
+  m_sub_nt = nt[0];
+}
+
+void Variation::add_delete(int length)
+{
+  set_type(vtDelete);
+  m_delete_length = length;
+}
+
+void Variation::add_insert(string seq)
+{
+  set_type(vtInsert);
+  m_insert_seq = seq;
+}
+
+void Variation::add_dangle_left()
+{
+  set_type(vtDangleLeft);
+}
+
+void Variation::add_dangle_right()
+{
+  set_type(vtDangleRight);
+}
+
+string Variation::to_string()
+{
+  vector<VariType> types;
+  get_types(types);
+  if (types.size() == 0)
+    return "none";
+  
+  string result;
+  for (unsigned int i=0; i<types.size(); ++i) {
+    VariType type = types[i];
+    string type_result = type_to_string(type);
+    switch(type) {
+    case vtSubstitute:
+      type_result += string("_") + m_sub_nt;
+      break;
+    case vtInsert:
+      type_result += string("_") + m_insert_seq;
+      break;
+    case vtDelete:
+      type_result += string("_") + std::to_string(m_delete_length);
     break;
-  case vtDelete:
-    result += "_" + to_string(delete_length);
-    break;
-  case vtNone:
-  case vtDangleLeft:
-  case vtDangleRight:
-    break;
+    case vtNone:
+    case vtDangleLeft:
+    case vtDangleRight:
+      break;
+    default: mexit("invalid type: vtCount");
+    }
+    if (i == 0)
+      result = type_result;
+    else
+      result += ":" + type_result;
   }
   return result;
 }
 
-void Variation::set_from_string(const string str)
+void Variation::from_string(const string str)
 {
-  delete_length = 0;
-  std::size_t index = str.find("_");
-  if (index == string::npos) {
-    type = str_to_type(str);
-  } else {
-    string type_str = str.substr(0, index);
-    string data_str = str.substr(index+1);
-    type = str_to_type(type_str);
-    if (type == vtDelete)
-      delete_length = safe_string_to_str(data_str, "delete_length");
-    else
-      seq = data_str;
+  vector<string> fields;
+  split_string(str, fields, ':');
+
+  for (unsigned int i=0; i<fields.size(); ++i) {
+    string field = fields[i];
+    VariType type;
+    string data_str;
+    std::size_t index = field.find("_");
+    if (index == string::npos) {
+      type = string_to_type(field);
+    } else {
+      type = string_to_type(field.substr(0, index));
+      data_str = field.substr(index+1);
+    }
+    set_type(type);
+    switch(type) {
+    case vtSubstitute:
+      massert(data_str.length() == 1, "expecting one character, found %s", data_str.c_str());
+      m_sub_nt = data_str[0];
+      break;
+    case vtInsert:
+      m_insert_seq = data_str;
+      break;
+    case vtDelete:
+      m_delete_length = safe_string_to_int(data_str, "delete_length");
+      break;
+    break;
+    case vtNone:
+    case vtDangleLeft:
+    case vtDangleRight:
+      break;
+    default: mexit("invalid type: vtCount");
+    }
   }
 }
 
-bool operator<(const Variation& lhs, const Variation& rhs) {
-  if (lhs.type != rhs.type)
-    return (int)lhs.type < (int)rhs.type;
-  if (lhs.seq != rhs.seq)
-    return lhs.seq < rhs.seq;
-  return lhs.delete_length < rhs.delete_length;
-
+void Variation::set_type(VariType type)
+{
+  if (type != vtNone) {
+    int offset = (int)type;
+    m_type_bitmap |= 1<<offset;
+  }
 }
 
-bool operator==(const Variation& lhs, const Variation& rhs) {
-  return (lhs.type == rhs.type)
-    && (lhs.seq == rhs.seq)
-    && (lhs.delete_length == rhs.delete_length);
+void Variation::get_types(vector<VariType>& types)
+{
+  for (int i=0; i<vtCount; ++i)
+    if (m_type_bitmap & 1<<i)
+      types.push_back((VariType)i);
 }
 
 void Variation::save(ofstream& out)
 {
-  // write type
-  out.write(reinterpret_cast<const char*>(&type), sizeof(type));
+  // write m_type_bitmap
+  out.write(reinterpret_cast<const char*>(&m_type_bitmap), sizeof(int));
 
-  // write seq length
-  size_t size_seq = seq.size();
+  // write m_sub_nt
+  out.write(reinterpret_cast<const char*>(&m_sub_nt), sizeof(char));
+
+  // write m_delete_length
+  out.write(reinterpret_cast<const char*>(&m_delete_length), sizeof(int));
+
+  // write m_insert_seq length
+  size_t size_seq = m_insert_seq.size();
   out.write(reinterpret_cast<const char*>(&size_seq), sizeof(size_seq));
 
-  // write seq
-  out.write(seq.c_str(), sizeof(char)*seq.size());
-
-  // write delete length
-  out.write(reinterpret_cast<const char*>(&delete_length), sizeof(int));
+  // write m_insert_seq data
+  out.write(m_insert_seq.c_str(), sizeof(char)*m_insert_seq.size());
 }
 
 void Variation::load(ifstream& in)
 {
-  // read type
-  in.read(reinterpret_cast<char*>(&type), sizeof(type));
+  // read m_type_bitmap
+  in.read(reinterpret_cast<char*>(&m_type_bitmap), sizeof(int));
 
-  // read seq length
+  // read m_sub_nt
+  in.read(reinterpret_cast<char*>(&m_sub_nt), sizeof(char));
+
+  // read m_delete_length
+  in.read(reinterpret_cast<char*>(&m_delete_length), sizeof(int));
+
+  // read m_insert_seq length
   size_t size_seq;
   in.read(reinterpret_cast<char*>(&size_seq), sizeof(size_seq));
 
-  // read seq
-  seq.resize(size_seq);
-  in.read(&seq[0], sizeof(char)*seq.size());
+  // read m_insert_seq data
+  m_insert_seq.resize(size_seq);
+  in.read(&m_insert_seq[0], sizeof(char)*m_insert_seq.size());
 
-  // read delete length
-  in.read(reinterpret_cast<char*>(&delete_length), sizeof(int));
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Variation Set
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-VariationSet::VariationSet() {}
-
-VariationSet::VariationSet(const map<string, int>& contig_map)
+bool operator<(const Variation& lhs, const Variation& rhs)
 {
-  for (map<string, int>::const_iterator it=contig_map.begin(); it!=contig_map.end(); ++it) {
-    string contig = (*it).first;
-    int length = (*it).second;
-
-    vector<int>& coverage_contig = m_covs[contig];
-    coverage_contig.resize(length);
-  }
+  if (lhs.m_type_bitmap != rhs.m_type_bitmap)
+    return lhs.m_type_bitmap < rhs.m_type_bitmap;
+  if (lhs.m_sub_nt != rhs.m_sub_nt)
+    return lhs.m_sub_nt < rhs.m_sub_nt;
+  if (lhs.m_insert_seq != rhs.m_insert_seq)
+    return lhs.m_insert_seq < rhs.m_insert_seq;
+  return lhs.m_delete_length < rhs.m_delete_length;
 }
 
-VariationSet::VariationSet(string fn)
+bool operator==(const Variation& lhs, const Variation& rhs)
 {
-  load(fn);
-}
-
-map< string, map< int, map <Variation, int> > >& VariationSet::get_vars()
-{
-  return m_vars;
-}
-
-map<string, vector<int> >& VariationSet::get_covs()
-{
-  return m_covs;
-}
-
-vector<string> VariationSet::get_contigs()
-{
-  vector<string> result;
-  for (auto const& element : m_covs)
-    result.push_back(element.first);
-  return result;
-}
-
-void VariationSet::collect_var_keys(map< string, map< int, set< Variation > > >& keys)
-{
-  map< string, map< int, map <Variation, int> > >& vars = get_vars();
-  for (map< string, map< int, map <Variation, int> > >::const_iterator it=vars.begin(); it!=vars.end(); ++it) {
-    string contig = (*it).first;
-    const map< int, map <Variation, int> >& vars_contig = (*it).second;
-    map< int, set <Variation> >& result_vars_contig = keys[contig];
-
-    for (map< int, map <Variation, int> >::const_iterator jt=vars_contig.begin(); jt != vars_contig.end(); ++jt) {
-      int coord = (*jt).first;
-      const map <Variation, int>& vars_coord = (*jt).second;
-      set <Variation >& result_vars_coord = result_vars_contig[coord];
-      for (map <Variation, int>::const_iterator xt=vars_coord.begin(); xt!=vars_coord.end(); ++xt) {
-	Variation var = (*xt).first;
-	result_vars_coord.insert(var);
-      }
-    }
-  }
-}
-
-void VariationSet::collect_coord_keys(map< string, set< int > >& keys)
-{
-  map< string, map< int, map <Variation, int> > >& vars = get_vars();
-  for (map< string, map< int, map <Variation, int> > >::const_iterator it=vars.begin(); it!=vars.end(); ++it) {
-    string contig = (*it).first;
-    const map< int, map <Variation, int> >& vars_contig = (*it).second;
-    set <int>& keys_contig = keys[contig];
-
-    for (map< int, map <Variation, int> >::const_iterator jt=vars_contig.begin(); jt != vars_contig.end(); ++jt) {
-      int coord = (*jt).first;
-      keys_contig.insert(coord);
-    }
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Save Variation Set
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void VariationSet::save_nlv(ofstream& out)
-{
-  // write number of contigs
-  size_t size = m_vars.size();
-  out.write(reinterpret_cast<const char*>(&size), sizeof(size));
-
-  for (map< string, map< int, map <Variation, int> > >::iterator it=m_vars.begin(); it!=m_vars.end(); ++it) {
-    string contig = (*it).first;
-    map< int, map <Variation, int> >& vars_contig = (*it).second;
-
-    // write contig id length
-    size_t size_contig = contig.size();
-    out.write(reinterpret_cast<const char*>(&size_contig), sizeof(size_contig));
-
-    // write contig id
-    out.write(contig.c_str(), sizeof(char)*contig.size());
-
-    // write number of coords per contig
-    size_t size_vars_contig = vars_contig.size();
-    out.write(reinterpret_cast<const char*>(&size_vars_contig), sizeof(size_vars_contig));
-
-    for (map< int, map <Variation, int> >::iterator jt=vars_contig.begin(); jt != vars_contig.end(); ++jt) {
-      int coord = (*jt).first;
-      map <Variation, int>& vars_coord = (*jt).second;
-
-      // write coord
-      out.write(reinterpret_cast<const char*>(&coord), sizeof(int));
-
-      // write number of vars per coord
-      size_t size_vars_coord = vars_coord.size();
-      out.write(reinterpret_cast<const char*>(&size_vars_coord), sizeof(size_vars_coord));
-
-      for (map <Variation, int>::iterator xt=vars_coord.begin(); xt!=vars_coord.end(); ++xt) {
-	Variation var = (*xt).first;
-	int count = (*xt).second;
-
-	var.save(out);
-	out.write(reinterpret_cast<const char*>(&count), sizeof(int));
-      }
-    }
-  }
-}
-
-
-void VariationSet::load_nlv(ifstream& in)
-{
-  // cout << "loading NLV maps" << endl;
-
-  // load number of contigs
-  size_t n_contigs;
-  in.read(reinterpret_cast<char*>(&n_contigs), sizeof(n_contigs));
-
-  for (unsigned i=0; i<n_contigs; ++i) {
-    string contig;
-
-    // read contig id size
-    size_t size_contig;
-    in.read(reinterpret_cast<char*>(&size_contig), sizeof(size_contig));
-
-    // read contig id
-    contig.resize(size_contig);
-    in.read(&contig[0], sizeof(char)*contig.size());
-
-    map< int, map <Variation, int> >& vars_contig = m_vars[contig];
-
-    // read number of coords per contig
-    size_t n_coords;
-    in.read(reinterpret_cast<char*>(&n_coords), sizeof(n_coords));
-
-    for (unsigned j=0; j<n_coords; ++j) {
-
-      // read coord
-      int coord;
-      in.read(reinterpret_cast<char*>(&coord), sizeof(int));
-
-      map <Variation, int>& vars_coord = vars_contig[coord];
-
-      // read number of vars per coord
-      size_t n_vars;
-      in.read(reinterpret_cast<char*>(&n_vars), sizeof(n_vars));
-
-      for (unsigned k=0; k<n_vars; ++k) {
-	Variation var;
-	int count;
-
-	var.load(in);
-	in.read(reinterpret_cast<char*>(&count), sizeof(int));
-
-	vars_coord[var] = count;
-      }
-    }
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// coverage load/save (VariationSet)
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void VariationSet::save_cov(ofstream& out)
-{
-  // write number of contigs
-  size_t size = m_covs.size();
-  out.write(reinterpret_cast<const char*>(&size), sizeof(size));
-
-  for (map<string, vector<int> >::iterator it=m_covs.begin(); it!=m_covs.end(); ++it) {
-    string contig = (*it).first;
-    vector<int>& coverage_contig = (*it).second;
-
-    // write contig id length
-    size_t size_contig = contig.size();
-    out.write(reinterpret_cast<const char*>(&size_contig), sizeof(size_contig));
-
-    // write contig id
-    out.write(contig.c_str(), sizeof(char)*contig.size());
-
-    // write coverage vector length
-    size_t length = coverage_contig.size();
-    out.write(reinterpret_cast<const char*>(&length), sizeof(length));
-
-    // write coverage vector values
-    out.write(reinterpret_cast<const char*>(&coverage_contig[0]), coverage_contig.size()*sizeof(int));
-  }
-}
-
-void VariationSet::load_cov(ifstream& in)
-{
-  // cout << "loading coverage vectors" << endl;
-  // read number of contigs
-  size_t n_contigs;
-  in.read(reinterpret_cast<char*>(&n_contigs), sizeof(n_contigs));
-
-  for (unsigned i=0; i<n_contigs; ++i) {
-    // read contig
-    string contig;
-
-    size_t size_contig;
-    in.read(reinterpret_cast<char*>(&size_contig), sizeof(size_contig));
-
-    contig.resize(size_contig);
-    in.read(&contig[0], sizeof(char)*contig.size());
-
-    vector<int>& coverage_contig = m_covs[contig];
-
-    // read coverage vector length
-    size_t length;
-    in.read(reinterpret_cast<char*>(&length), sizeof(length));
-
-    // read coverage vector values
-    coverage_contig.resize(length);
-    in.read(reinterpret_cast<char*>(&coverage_contig[0]), coverage_contig.size()*sizeof(int));
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Load/Save Variation Set
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static const char VariationSet_magicref[] = {0x01,0x03,0x02,0x04};
-const char* VariationSet::m_magicref = VariationSet_magicref;
-
-void VariationSet::save(string fn)
-{
-  cout << "saving NLV file: " << fn << endl;
-  ofstream out(fn.c_str(), ios::out | ios::binary);
-  massert(out.is_open(), "could not open file %s", fn.c_str());
-
-  // save magic number
-  out.write(m_magicref, 4);
-
-  save_cov(out);
-  save_nlv(out);
-  out.close();
-}
-
-void VariationSet::load(string fn)
-{
-  cout << "reading NLV file: " << fn << endl;
-  ifstream in(fn.c_str());
-  massert(in.is_open(), "could not open file %s", fn.c_str());
-
-  char magic[4];
-  in.read(magic, 4);
-  massert((memcmp(magic, m_magicref, sizeof(magic)) == 0), "magic number not found, check file format");
-
-  load_cov(in);
-  load_nlv(in);
-
-  in.close();
-}
-
-void VariationSet::add_var_map(const map< string, map< int, map <Variation, int> > >& vars)
-{
-  for (map< string, map< int, map <Variation, int> > >::const_iterator it=vars.begin(); it!=vars.end(); ++it) {
-    string contig = (*it).first;
-    const map< int, map <Variation, int> >& vars_contig = (*it).second;
-    map< int, map <Variation, int> >& this_vars_contig = m_vars[contig];
-
-    for (map< int, map <Variation, int> >::const_iterator jt=vars_contig.begin(); jt != vars_contig.end(); ++jt) {
-      int coord = (*jt).first;
-      const map <Variation, int>& vars_coord = (*jt).second;
-      map <Variation, int>& this_vars_coord = this_vars_contig[coord];
-      for (map <Variation, int>::const_iterator xt=vars_coord.begin(); xt!=vars_coord.end(); ++xt) {
-	Variation var = (*xt).first;
-	int count = (*xt).second;
-	this_vars_coord[var] += count;
-      }
-    }
-  }
-}
-
-VariationSet operator+(VariationSet const &v1, VariationSet const &v2)
-{
-  VariationSet result;
-
-  // add nlv maps
-  result.add_var_map(v1.m_vars);
-  result.add_var_map(v2.m_vars);
-
-  // sum coverage vectors
-  massert(v1.m_covs.size() == v2.m_covs.size(), "number of contigs must be the same");
-  for (map<string, vector<int> >::const_iterator it=v1.m_covs.begin(); it!=v1.m_covs.end(); ++it) {
-    string contig = (*it).first;
-    const vector<int>& coverage_contig1 = (*it).second;
-
-    massert(v2.m_covs.find(contig) != v2.m_covs.end(), "contig %s not found", contig.c_str());
-    const vector<int>& coverage_contig2 = v2.m_covs.at(contig);
-
-    massert(coverage_contig1.size() == coverage_contig2.size(), "coverage vectors must be equal size for contig %s", contig.c_str());
-    vector<int>& coverage_contig = result.m_covs[contig];
-    coverage_contig.resize(coverage_contig1.size());
-    for (unsigned i=0; i<coverage_contig1.size(); ++i) {
-      coverage_contig[i] = coverage_contig1[i] + coverage_contig2[i];
-    }
-  }
-
-  return result;
-}
-
-int VariationSet::get_var_count(string& contig, int& coord, Variation& var)
-{
-  massert(m_covs.find(contig) != m_covs.end(), "contig not found");
-  if (var.type == vtNone)
-    return get_ref_count(contig, coord);
-
-  // contig not found
-  if (m_vars.find(contig) == m_vars.end())
-    return 0;
-  map< int, map <Variation, int> >& contig_vars = m_vars[contig];
-
-  // coord not found
-  if (contig_vars.find(coord) == contig_vars.end())
-    return 0;
-  map <Variation, int>& coord_vars = contig_vars[coord];
-
-  // var not found
-  if (coord_vars.find(var) == coord_vars.end())
-    return 0;
-
-  return coord_vars[var];
-}
-
-int VariationSet::get_coverage(const string contig, const int coord)
-{
-  massert(m_covs.find(contig) != m_covs.end(), "contig not found");
-  vector<int>& cov = m_covs[contig];
-  massert(coord >= 0 && coord < (int)cov.size(), "coordinate out of range");
-  return cov[coord];
-}
-
-int VariationSet::get_ref_count(const string contig, const int coord)
-{
-  massert(m_covs.find(contig) != m_covs.end(), "contig not found");
-  vector<int>& cov = m_covs[contig];
-  massert(coord >= 0 && coord < (int)cov.size(), "coordinate out of range");
-  int total_count = cov[coord];
-
-  // contig not found
-  if (m_vars.find(contig) == m_vars.end())
-    return total_count;
-  map< int, map <Variation, int> >& contig_vars = m_vars[contig];
-
-  // coord not found
-  if (contig_vars.find(coord) == contig_vars.end())
-    return total_count;
-  map <Variation, int>& coord_vars = contig_vars[coord];
-
-  int total_var = 0;
-  for (map <Variation, int>::const_iterator xt=coord_vars.begin(); xt!=coord_vars.end(); ++xt) {
-    Variation var = (*xt).first;
-    int count = (*xt).second;
-    total_var += count;
-  }
-
-  return (total_count - total_var);
-}
-
-Variation VariationSet::get_major(const string contig, const int coord)
-{
-  Variation result;
-  massert(m_covs.find(contig) != m_covs.end(), "contig not found");
-  vector<int>& cov = m_covs[contig];
-  massert(coord >= 0 && coord < (int)cov.size(), "coordinate out of range");
-
-  // contig not found
-  if (m_vars.find(contig) == m_vars.end())
-    return result;
-  map< int, map <Variation, int> >& contig_vars = m_vars[contig];
-
-  // coord not found
-  if (contig_vars.find(coord) == contig_vars.end())
-    return result;
-
-  // init for reference count
-  int ref_count = get_ref_count(contig, coord);
-  int max_count = ref_count;
-
-  // find maximal variant
-  map <Variation, int>& coord_vars = contig_vars[coord];
-  for (map <Variation, int>::const_iterator xt=coord_vars.begin(); xt!=coord_vars.end(); ++xt) {
-    Variation var = (*xt).first;
-    int count = (*xt).second;
-    if (count > max_count) {
-      max_count = count;
-      result = var;
-    }
-  }
-
-  return result;
+  return (lhs.m_type_bitmap == rhs.m_type_bitmap)
+    && (lhs.m_sub_nt == rhs.m_sub_nt)
+    && (lhs.m_delete_length == rhs.m_delete_length)
+    && (lhs.m_insert_seq == rhs.m_insert_seq);
 }

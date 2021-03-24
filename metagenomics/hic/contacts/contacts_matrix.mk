@@ -34,16 +34,3 @@ $(CONTIG_MATRIX_STATS_DONE): $(CONTIG_MATRIX_DONE)
 cmatrix_stats: $(CONTIG_MATRIX_STATS_DONE)
 
 cnt_matrix: $(CONTIG_MATRIX_STATS_DONE)
-
-#######################################################################################
-# plots
-#######################################################################################
-
-make_plot_contig_matrix:
-	$(_R) R/contig_matrix.r plot.contig.matrix \
-		adir=$(ASSEMBLY_DIR) \
-		fdir=$(SET_FIGURE_DIR)/cc_matrix \
-		aid=$(ASSEMBLY_ID) \
-		ids=$(LIB_IDS) \
-		ver=$(CONTIG_MATRIX_VERSION) \
-		titles=$(LIB_TITLES)

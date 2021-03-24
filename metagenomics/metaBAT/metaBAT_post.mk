@@ -17,7 +17,7 @@ $(METABAT_RAW_BIN_TABLE_DONE): $(METABAT_RAW_TABLE_DONE)
 	$(_start)
 	$(_R) $(_md)/R/bin_summary.r bin.summary \
 		ifn.cb=$(METABAT_TABLE_RAW) \
-		ifn.contigs=$(METABAT_IN_CONTIG_TABLE) \
+		ifn.contigs=$(METABAT_CONTIG_TABLE) \
 		ofn=$(METABAT_BIN_TABLE_RAW)
 	$(_end_touch)
 mb_raw_bin_table: $(METABAT_RAW_BIN_TABLE_DONE)
@@ -67,6 +67,7 @@ $(METABAT_SELECT_DONE): $(METABAT_RAW_BIN_TABLE_DONE) $(METABAT_CONTIG_SCORES_DO
 	$(_start)
 	$(_R) $(_md)/R/mb_select.r select.contigs \
 		ifn=$(METABAT_CONTIG_SCORE) \
+		filter=$(METABAT_FILTER) \
 		min.pearson=$(METABAT_MIN_SCORE) \
 		min.zscore=$(METABAT_MIN_ZSCORE) \
 		max.discard.fraction=$(METABAT_MAX_DISCARD_FRACTION) \
@@ -89,8 +90,8 @@ $(METABAT_BIN_TABLE_DONE): $(METABAT_DISCARD_DONE)
 	$(_start)
 	$(_R) $(_md)/R/bin_summary.r bin.summary \
 		ifn.cb=$(METABAT_TABLE) \
-		ifn.contigs=$(METABAT_IN_CONTIG_TABLE) \
+		ifn.contigs=$(METABAT_CONTIG_TABLE) \
 		ofn=$(METABAT_BIN_TABLE)
 	$(_end_touch)
-mb_final: $(METABAT_BIN_TABLE_DONE)
+mb_post: $(METABAT_BIN_TABLE_DONE)
 

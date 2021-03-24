@@ -7,7 +7,7 @@ $(MB_INDEX_DONE):
 	$(call _start,$(METABAT_INDEX_DIR))
 	$(METABAT_BWA) index \
 		-p $(METABAT_INDEX_PREFIX) \
-		$(METABAT_IN_CONTIGS)
+		$(METABAT_CONTIG_FASTA)
 	$(_end_touch)
 mb_index: $(MB_INDEX_DONE)
 

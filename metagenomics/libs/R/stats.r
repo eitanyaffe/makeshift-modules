@@ -11,14 +11,18 @@ merge.stats=function(ldir, ids, ofn.count, ofn.yield)
             duplicate=paste(ldir, "/", id, "/.count_dups", sep=""),
             deconseq=paste(ldir, "/", id, "/.count_deconseq", sep=""))
 
-        # others stat files are summed over both sides
-        result.lib = NULL
-        for (i in 1:length(ll)) {
-            name = names(ll)[i]
-            fn = ll[[i]]
-            x = load.table(fn, header=F)
-            result.lib = c(result.lib, sum(as.numeric(x[,3])))
+        if (file.exists(ll[[i]])) {
+            result.lib = NULL
+            for (i in 1:length(ll)) {
+                name = names(ll)[i]
+                fn = ll[[i]]
+                x = load.table(fn, header=F)
+                result.lib = c(result.lib, sum(as.numeric(x[,3])))
+            }
+        } else {
+            result.lib = rep(0, length(ll))
         }
+
         df = data.frame(id=id, t(result.lib))
         names(df) = c("id", names(ll))
         result = rbind(result, df)

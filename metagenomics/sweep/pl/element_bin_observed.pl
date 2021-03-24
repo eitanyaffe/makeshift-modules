@@ -78,7 +78,8 @@ while (my $line = <IN>) {
     my $contig2 = $f[$h{contig2}];
     my $count = $f[$h{contacts}];
 
-    defined($contig2bin{$contig1}) && defined($contig2bin{$contig2}) or die;
+    next if (!defined($contig2bin{$contig1}) || !defined($contig2bin{$contig2}));
+
     my $bin1 = $contig2bin{$contig1};
     my $bin2 = $contig2bin{$contig2};
 

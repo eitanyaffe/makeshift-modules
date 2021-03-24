@@ -30,13 +30,6 @@ $(COV_LIBS_DONE):
 	$(_end_touch)
 cov_libs: $(COV_LIBS_DONE)
 
-# COV_LIBS_DONE?=$(COV_DIR)/.done_cov_libs
-# $(COV_LIBS_DONE):
-# 	$(call _start,$(COV_DIR))
-# 	@$(foreach ID,$(COV_IDS),$(MAKE) LIB_ID=$(ID) cov_lib; $(ASSERT);)
-# 	$(_end_touch)
-# cov_libs: $(COV_LIBS_DONE)
-
 COV_TABLE_DONE?=$(COV_DIR)/.done_table
 $(COV_TABLE_DONE): $(COV_LIBS_DONE)
 	$(call _start,$(COV_DIR))

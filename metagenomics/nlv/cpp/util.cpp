@@ -103,7 +103,7 @@ void massert(bool cond, char *fmt, ...)
   exit(-1);
 }
 
-int safe_string_to_str(const string str, const string title)
+int safe_string_to_int(const string str, const string title)
 {
     try {
       return stoi(str);
@@ -112,7 +112,7 @@ int safe_string_to_str(const string str, const string title)
       mexit("%s %s could not be converted to integer", title.c_str(), str.c_str());
     }
     return 0;
-} 
+}
 
 int get_field_index(string field, const vector<string>& titles)
 {
@@ -149,4 +149,36 @@ int char2index(char c) {
     }
   massert(0, "unknown character: %c", c);
   return 0;
+}
+
+int read_sites(string ifn, map< string, map < int, pair< Variation, Variation > > >& sites)
+{
+  cout << "reading site table: " << ifn << endl;
+  ifstream in(ifn.c_str());
+  massert(in.is_open(), "could not open file %s", ifn.c_str());
+  vector<string> fields;
+  char delim = '\t';
+
+  // parse header
+  split_line(in, fields, delim);
+  int contig_ind = get_field_index("contig", fields);
+  int coord_ind = get_field_index("coord", fields);
+  int major_ind = get_field_index("major", fields);
+  int minor_ind = get_field_index("minor", fields);
+
+  int count = 0;
+  while(in) {
+    split_line(in, fields, delim);
+    if(fields.size() == 0)
+      break;
+    string contig = fields[contig_ind];
+    int coord = safe_string_to_int(fields[coord_ind], "coordinate") - 1;
+    Variation major = Variation(fields[major_ind]);
+    Variation minor = Variation(fields[minor_ind]);
+    sites[contig][coord] = make_pair(major, minor);
+    count++;
+  }
+
+  in.close();
+  return count;
 }

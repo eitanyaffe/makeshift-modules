@@ -1,8 +1,20 @@
-generage.bin.segments=function(ifn.contigs, ifn.bins, ifn.c2b, margin, ofn.segments, ofn.bins)
+restrict.contigs=function(ifn.bins, ifn.c2b, bin.field, bin.value, ofn)
+{
+    bins = load.table(ifn.bins)
+    c2b = load.table(ifn.c2b)
+
+    bins = bins[bins[,bin.field] == bin.value,]
+    c2b = c2b[is.element(c2b$bin, bins$bin),]
+    save.table(c2b, ofn)
+}
+
+generage.bin.segments=function(ifn.contigs, ifn.bins, ifn.c2b, bin.field, bin.value, margin, ofn.segments, ofn.bins)
 {
     contigs = load.table(ifn.contigs)
     bins = load.table(ifn.bins)
     c2b = load.table(ifn.c2b)
+
+    bins = bins[bins[,bin.field] == bin.value,]
 
     result.bins = NULL
     result.segments = NULL
@@ -28,27 +40,26 @@ generage.bin.segments=function(ifn.contigs, ifn.bins, ifn.c2b, margin, ofn.segme
     save.table(result.segments, ofn.segments)
 }
 
-diverge.filter=function(ifn, min.freq, ifn.cov1, ifn.cov2, min.p, max.p, ofn)
+diverge.filter=function(ifn, min.major.freq, ifn.cov1, ifn.cov2, min.p, max.p, ofn)
 {
     df = load.table(ifn)
-    cov1 = load.table(ifn.cov1)
-    cov2 = load.table(ifn.cov2)
 
-    df = df[df$total1 > 0 & df$total2 > 0,]
+    df$f1 = round(pmax(df$major1, df$minor1) / (df$coverage1 + 1),2)
+    df$f2 = round(pmax(df$major2, df$minor2) / (df$coverage2 + 1),2)
+    changed = (df$major1 > df$minor1 & df$major2 < df$minor2) | (df$major1 < df$minor1 & df$major2 > df$minor2)
+    result = df[changed & df$f1 > min.major.freq & df$f2 > min.major.freq,]
 
-    ix1 = match(df$bin, cov1$bin)
-    ix2 = match(df$bin, cov2$bin)
+    #cov1 = load.table(ifn.cov1)
+    #cov2 = load.table(ifn.cov2)
+    #df = df[df$coverage1 > 0 & df$coverage2 > 0,]
+    #ix1 = match(df$bin, cov1$bin)
+    #ix2 = match(df$bin, cov2$bin)
+    #min1 = cov1[ix1,min.p]
+    #max1 = cov1[ix1,max.p]
+    #min2 = cov2[ix2,min.p]
+    #max2 = cov2[ix2,max.p]
 
-    min1 = cov1[ix1,min.p]
-    max1 = cov1[ix1,max.p]
-
-    min2 = cov2[ix2,min.p]
-    max2 = cov2[ix2,max.p]
-
-    freq1 = df$count1/df$total1
-    freq2 = df$count2/df$total2
-
-    result = df[freq1 >= min.freq & freq2 >= min.freq & df$total1 >= min1 & df$total1 <= max1& df$total2 >= min2 & df$total2 <= max2,]
+    #result = df[df$coverage1 >= min1 & df$coverage1 <= max1& df$coverage2 >= min2 & df$coverage2 <= max2,]
 
     save.table(result, ofn)
 }

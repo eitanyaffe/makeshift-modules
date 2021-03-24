@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 #include "util.h"
-#include "Variation.h"
+#include "VariationSet.h"
 #include "Params.h"
 
 struct Segment {
@@ -64,8 +64,8 @@ void read_segment_table(string fn, string summary_field, map<string, vector< Seg
       break;
 
     string contig = fields[contig_ind];
-    int start = safe_string_to_str(fields[start_ind], "start_coordinate")-1;
-    int end = safe_string_to_str(fields[end_ind], "end_coordinate")-1;
+    int start = safe_string_to_int(fields[start_ind], "start_coordinate")-1;
+    int end = safe_string_to_int(fields[end_ind], "end_coordinate")-1;
     string item = fields[summary_ind];
 
     Segment segment(contig, start, end);
@@ -73,13 +73,20 @@ void read_segment_table(string fn, string summary_field, map<string, vector< Seg
   }
 }
 
-
 int percentile(vector<int> &v, int percentile)
 {
   size_t n = (v.size() * percentile) / 100;
   if (n < 0) n = 0;
   if (n >= v.size()) n = v.size()-1;
   nth_element(v.begin(), v.begin()+n, v.end());
+  return v[n];
+}
+
+int sorted_percentile(vector<int> &v, int percentile)
+{
+  size_t n = (v.size() * percentile) / 100;
+  if (n < 0) n = 0;
+  if (n >= v.size()) n = v.size()-1;
   return v[n];
 }
 
@@ -107,8 +114,9 @@ void coverage_output(VariationSet& varset,
       }
     }
     out << key;
+    sort (covs.begin(), covs.end()); 
     for (unsigned int i=0; i<7; ++i) {
-      int percentile_cov = percentile(covs, percentiles[i]);
+      int percentile_cov = sorted_percentile(covs, percentiles[i]);
       out << "\t" << percentile_cov;
     }
     out << endl;

@@ -8,7 +8,8 @@ $(call _register_module,libs,$(units),)
 
 LIBS_DIR?=$(OUTPUT_DIR)/libs
 LIB_DIR?=$(LIBS_DIR)/$(LIB_ID)
-LIBS_FDIR?=$(OUTPUT_DIR)/figures_libs
+
+LIBS_FDIR?=$(BASE_FDIR)/libs
 
 #####################################################################################################
 # stats
@@ -48,6 +49,10 @@ TRIMMOMATIC_IN_R1?=$(LIB_INPUT_R1)
 TRIMMOMATIC_IN_R2?=$(LIB_INPUT_R2)
 TRIMMOMATIC_IN_DIRS?=$(LIB_INPUT_DIRS)
 
+# !!! dockerize
+# sudo dr run -i biocontainers/trimmomatic:v0.38dfsg-1-deb_cv1 TrimmomaticPE
+# adapter files under /usr/share/trimmomatic/
+
 TRIMMOMATIC_VER?=0.38
 TRIMMOMATIC_BASEDIR?=/home/eitany/work/download
 TRIMMOMATIC_DIR?=$(TRIMMOMATIC_BASEDIR)/Trimmomatic-$(TRIMMOMATIC_VER)
@@ -59,6 +64,7 @@ TRIMMOMATIC_JAR?=$(TRIMMOMATIC_DIR)/trimmomatic-$(TRIMMOMATIC_VER).jar
 TRIMMOMATIC_ADAPTER_SFN?=NexteraPE-PE.fa
 
 TRIMMOMATIC_ADAPTER_FN?=$(TRIMMOMATIC_DIR)/adapters/$(TRIMMOMATIC_ADAPTER_SFN)
+
 TRIMMOMATIC_MODE?=PE
 TRIMMOMATIC_THREADS?=10
 TRIMMOMATIC_LEADING?=20
@@ -70,7 +76,7 @@ TRIMMOMATIC_PARAMS?=\
 ILLUMINACLIP:$(TRIMMOMATIC_ADAPTER_FN):$(TRIMMOMATIC_ILLUMINACLIP) \
 LEADING:$(TRIMMOMATIC_LEADING) \
 TRAILING:$(TRIMMOMATIC_TRAILING) \
-MAXINFO:$(TRIMMOMATIC_MAXINFO)
+MAXINFO:$(TRIMMOMATIC_MAXINFO) -phred33
 
 # output
 TRIMMOMATIC_OUTDIR?=$(LIB_DIR)/trimmomatic
@@ -159,8 +165,15 @@ PAIRED_MAX_JOBS?=2
 # stats_libs.mk
 #####################################################################################################
 
-LIB_STATS_FDIR?=$(BASE_FDIR)/lib_stats
+LIB_STATS_LABEL?=all
+LIB_IDS?=i1 i2 i3
+
+LIBS_STAT_DIR_IN?=$(LIBS_DIR)
+
+STATS_BASE_DIR?=$(LIBS_DIR)
+STATS_DIR?=$(STATS_BASE_DIR)/stats/$(LIB_STATS_LABEL)
 STATS_COUNTS?=$(STATS_DIR)/counts.txt
 STATS_YIELD?=$(STATS_DIR)/yield.txt
 
+LIB_STATS_FDIR?=$(LIBS_FDIR)/stats/$(LIB_STATS_LABEL)
 LIB_STATS_LABELS?=$(LIB_STATS_IDS)

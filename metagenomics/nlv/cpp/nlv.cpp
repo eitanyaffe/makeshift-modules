@@ -25,7 +25,10 @@ void usage(const char* name)
   fprintf(stderr, "  diverge: Identify diverging major alleles between two NLVs\n");
   fprintf(stderr, "  segregation: Identify segtrgating positions in a single NLV\n");
   fprintf(stderr, "  query: Extract counts for a set of contig/coord/variation\n");
+  fprintf(stderr, "  query_nts: Extract sub_A/sub_C/sub_G/sub_T/ref counts for a set of contig/coord\n");
   fprintf(stderr, "  coverage: Extract total median coverage for segment sets\n");
+  fprintf(stderr, "  restrict: Restrict NLV to a set of contigs\n");
+  fprintf(stderr, "  sites: Extract segregating sites across multiple NLVs\n");
   fprintf(stderr, "  view: Print to screen data for single contig\n");
   fprintf(stderr, "  dump: Dump single NLV into tab-delimited tables (for debugging)\n");
 }
@@ -52,10 +55,16 @@ int main(int argc, char **argv)
     rc = compare_main(name.c_str(), argc-1, argv+1);
   } else if (command == "query") {
     rc = query_main(name.c_str(), argc-1, argv+1);
+  } else if (command == "query_nts") {
+    rc = query_nts_main(name.c_str(), argc-1, argv+1);
   } else if (command == "coverage") {
     rc = coverage_main(name.c_str(), argc-1, argv+1);
+  } else if (command == "restrict") {
+    rc = restrict_main(name.c_str(), argc-1, argv+1);
   } else if (command == "segregation") {
     rc = segregation_main(name.c_str(), argc-1, argv+1);
+  } else if (command == "sites") {
+    rc = sites_main(name.c_str(), argc-1, argv+1);
   } else if (command == "view") {
     rc = view_main(name.c_str(), argc-1, argv+1);
   } else {

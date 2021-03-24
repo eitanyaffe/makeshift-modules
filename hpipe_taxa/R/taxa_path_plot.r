@@ -22,7 +22,7 @@ plot.path=function(ifn.order, ifn.path, ifn.species, fdir)
         fig.start(fdir=fdir, ofn=paste(fdir, "/", field, ".pdf", sep=""), type="pdf", height=3+N*0.2, width=5+M*0.2)
 
         plot.new()
-        par(mai=c(2,0.5,0.5,4))
+        par(mai=c(2,1.2,0.5,4))
         par(xaxs="i", yaxs="i")
         plot.window(xlim=xlim, ylim=ylim)
         rect(ybottom=table$anchor.index-0.5, ytop=table$anchor.index+0.5,

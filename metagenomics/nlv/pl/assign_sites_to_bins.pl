@@ -59,7 +59,7 @@ $header = <IN>;
 chomp($header);
 print "writing table: $ofn\n";
 open(OUT, ">", $ofn) || die $ofn;
-print OUT "$header\tbin\n";
+print OUT "bin\t$header\n";
 
 while (my $line = <IN>) {
     chomp($line);
@@ -80,7 +80,7 @@ while (my $line = <IN>) {
     # out of range of segment
     next if ($coord < $segment_start || $coord >= $segment_end);
 
-    print OUT $line, "\t", $bin, "\n";
+    print OUT $bin, "\t", $line, "\n";
 }
 
 close(IN);

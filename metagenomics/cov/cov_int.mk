@@ -12,11 +12,9 @@ COV_BIN=$(_md)/bin.$(shell hostname)/cov
 #####################################################################################################
 
 # contig table
-#COV_INPUT_CONTIG_TABLE?=$(CONTIG_TABLE)
 COV_INPUT_CONTIG_TABLE?=$(ASSEMBLY_CONTIG_TABLE)
 
 # contig fasta
-#COV_INPUT_CONTIG_FASTA?=$(CONTIG_FASTA)
 COV_INPUT_CONTIG_FASTA?=$(ASSEMBLY_CONTIG_FILE)
 
 # output dir

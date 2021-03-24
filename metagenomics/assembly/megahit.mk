@@ -1,6 +1,6 @@
 ASSEMBLY_WORK_DIR?=$(MEGAHIT_DIR)/work
 
-MEGAHIT_DONE?=$(MEGAHIT_DIR)/.done
+MEGAHIT_DONE?=$(MEGAHIT_DIR)/.done_megahit
 $(MEGAHIT_DONE):
 	$(call _start,$(MEGAHIT_DIR))
 	@rm -rf $(ASSEMBLY_WORK_DIR)
@@ -19,7 +19,7 @@ $(MEGAHIT_DONE):
 	$(_end_touch)
 megahit_base: $(MEGAHIT_DONE)
 
-MEGAHIT_SELECT_DONE?=$(MEGAHIT_DIR)/.done_select
+MEGAHIT_SELECT_DONE?=$(MEGAHIT_DIR)/.done_megahit_select
 $(MEGAHIT_SELECT_DONE): $(MEGAHIT_DONE)
 	$(_start)
 	$(_R) $(_md)/R/select_contigs.r top \
@@ -33,7 +33,7 @@ $(MEGAHIT_SELECT_DONE): $(MEGAHIT_DONE)
 	$(_end_touch)
 megahit: $(MEGAHIT_SELECT_DONE)
 
-MEGAHIT_FASTG_DONE?=$(MEGAHIT_DIR)/.done_fastg
+MEGAHIT_FASTG_DONE?=$(MEGAHIT_DIR)/.done_megahit_fastg
 $(MEGAHIT_FASTG_DONE): $(MEGAHIT_DONE)
 	$(_start)
 	$(MEGAHIT_BIN)_toolkit contig2fastg \

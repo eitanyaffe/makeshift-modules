@@ -26,6 +26,10 @@ while (my $line = <IN>) {
     my @f = split("\t", $line);
     my $gene = $f[$h{gene}];
     my $length = $f[$h{$length_field}];
+
+    # !!! we include stop-codon in length of gene, so we remove one aa
+    $length -= ($length_field eq "aa") ? 3 : 1;
+    
     $query_genes{$gene} = $length;
 }
 close(IN);

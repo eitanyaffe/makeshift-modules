@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 #include "util.h"
-#include "Variation.h"
+#include "VariationSet.h"
 #include "Params.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +22,8 @@ void query_init_params(const char* name, int argc, char **argv, Parameters& para
 {
   params.add_parser("nlv", new ParserFilename("NLV file"), true);
   params.add_parser("table", new ParserFilename("Table with (contig,coord,variation) triplets"), true);
-  params.add_parser("ofn", new ParserFilename("Output table with added column for counts"), true);
+  params.add_parser("field", new ParserString("Variation field in table"), true);
+  params.add_parser("ofn", new ParserFilename("Output table"), true);
 
   if (argc == 1) {
     params.usage(name);
@@ -56,26 +57,14 @@ void query_save(VariationSet& varset,
 	int count = varset.get_var_count(contig, coord, var);
 	int total = varset.get_coverage(contig, coord);
 
-	// string c1 = "k147_341607:s1";
-	// int y = 7438;
-	// Variation var1("sub_A");
-	// int x = varset.get_var_count(c1, y, var1);
-	// cout << "var.count=" << count << endl;
-	// cout << "var1.count=" << x << endl;
-	// cout << "var1=" << var1.str() << endl;
-	// cout << "var2=" << var.str() << endl;
-	// cout << "equal.seq=" << (var.seq == var1.seq) << endl;
-	// cout << "equal.type=" << (var.type == var1.type) << endl;
-	// cout << "equal.del=" << (var.delete_length == var1.delete_length) << endl;
-
 	out << contig << "\t" << coord+1 << "\t";
-	out << var.str() << "\t" << count << "\t" << total << "\n";
+	out << var.to_string() << "\t" << count << "\t" << total << "\n";
       }
     }
   }
 }
 
-void query_load(string fn, map< string, map< int, set< Variation > > >& keys)
+void query_load(string fn,string var_field, map< string, map< int, set< Variation > > >& keys)
 {
   cout << "reading query table: " << fn << endl;
   ifstream in(fn.c_str());
@@ -87,7 +76,7 @@ void query_load(string fn, map< string, map< int, set< Variation > > >& keys)
   split_line(in, fields, delim);
   int contig_ind = get_field_index("contig", fields);
   int coord_ind = get_field_index("coord", fields);
-  int var_ind = get_field_index("var", fields);
+  int var_ind = get_field_index(var_field, fields);
 
   while(in) {
     split_line(in, fields, delim);
@@ -95,12 +84,11 @@ void query_load(string fn, map< string, map< int, set< Variation > > >& keys)
       break;
 
     string contig = fields[contig_ind];
-    int coord = safe_string_to_str(fields[coord_ind], "coordinate") - 1;
+    int coord = safe_string_to_int(fields[coord_ind], "coordinate") - 1;
     Variation var = Variation(fields[var_ind]);
     keys[contig][coord].insert(var);
   }
 }
-
 
 int query_main(const char* name, int argc, char **argv)
 {
@@ -109,12 +97,13 @@ int query_main(const char* name, int argc, char **argv)
 
   string ifn_nlv = params.get_string("nlv");
   string ifn_tab = params.get_string("table");
+  string field = params.get_string("field");
   string ofn = params.get_string("ofn");
 
   VariationSet varset(ifn_nlv);
 
   map< string, map< int, set< Variation > > > keys;
-  query_load(ifn_tab, keys);
+  query_load(ifn_tab, field, keys);
 
   cout << "saving result to table: " << ofn << endl;
   ofstream out(ofn.c_str());

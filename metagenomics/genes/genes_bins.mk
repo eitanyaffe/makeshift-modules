@@ -4,7 +4,7 @@ $(GENE2BIN_TABLE_DONE):
 	$(_R) $(_md)/R/gene2bin.r gene2bin.table \
 		ifn.genes=$(GENE_TABLE) \
 		ifn.bins=$(BINS_TABLE) \
-		ifn.contigs=$(BINS_CONTIG_TABLE_ASSOCIATED) \
+		ifn.contigs=$(GENES_C2B_TABLE) \
 		ofn=$(GENE2BIN_TABLE)
 	$(_end_touch)
 genes_bintable: $(GENE2BIN_TABLE_DONE)

@@ -1,4 +1,4 @@
-SPADES_YAML_DONE?=$(SPADES_DIR)/.done_yaml
+SPADES_YAML_DONE?=$(SPADES_DIR)/.done_spades_yaml
 $(SPADES_YAML_DONE):
 	$(call _start,$(SPADES_DIR))
 	perl $(_md)/pl/generate_spades_yaml.pl \
@@ -8,7 +8,7 @@ $(SPADES_YAML_DONE):
 	$(_end_touch)
 spades_yaml: $(SPADES_YAML_DONE)
 
-SPADES_DONE?=$(SPADES_DIR)/.done
+SPADES_DONE?=$(SPADES_DIR)/.done_spades
 $(SPADES_DONE): $(SPADES_YAML_DONE)
 	$(_start)
 	$(call _time,$(SPADES_DIR),spades) \

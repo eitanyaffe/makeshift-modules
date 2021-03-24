@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 #include "util.h"
-#include "Variation.h"
+#include "VariationSet.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // main functions
@@ -49,6 +49,6 @@ int merge_main(const char* name, int argc, char **argv)
       result = result + varset_i;
   }
   result.save(ofn);
-  
+
   return 0;
 }

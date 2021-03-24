@@ -13,5 +13,8 @@ export_files:
 		odir=$(EXPORT_ODIR) \
 		$(call _export_variable,$(EXPORT_VARIALBES)) \
 		$(EXPORT_VARIALBES_NOEVAL)
-	tar cvf $(EXPORT_ODIR_TAR) -C $(EXPORT_ODIR)/.. export_$(EXPORT_ID)
+ifneq ($(EXPORT_USER_DIRS),)
+	cp -r $(EXPORT_USER_DIRS) $(EXPORT_ODIR)
+endif
+	tar cf $(EXPORT_ODIR_TAR) -C $(EXPORT_DIR) $(EXPORT_ID)
 	$(_end)

@@ -4,7 +4,6 @@
 
 name:=taxa
 units:=taxa.mk seq_compare.mk rep_plots.mk GO.mk sc_ncbi.mk export_mags.mk
-preq_variables:=CA_ANCHOR_GENES GENE_REF_ID DATASET_ANCHOR_DIR
 $(call _register_module,taxa,$(units),,)
 
 ###########################################################
@@ -64,7 +63,10 @@ TAXA_VER?=v2
 TAXA_ID?=genebank_$(GENEBANK_VERSION)_$(GENE_REF_ID)_taxonomy_$(NCBI_TAX_ID)_maskCAG_$(CAG_MASK)_$(TAXA_VER)
 
 TAXA_DIR?=$(DATASET_ANCHOR_DIR)/uniref_selected/$(TAXA_ID)
-TAXA_FDIR?=$(ANCHOR_FIGURE_DIR)/taxa_selected/$(TAXA_ID)
+
+# figures
+TAXA_BASE_FDIR?=$(ANCHOR_FIGURE_DIR)
+TAXA_FDIR?=$(TAXA_BASE_FDIR)/taxa_selected/$(TAXA_ID)
 
 # taxa trees
 SET_TAXA_TABLE?=$(TAXA_DIR)/taxa_table
