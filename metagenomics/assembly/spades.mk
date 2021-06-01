@@ -1,3 +1,4 @@
+# to get spades to work files must be imported
 SPADES_YAML_DONE?=$(SPADES_DIR)/.done_spades_yaml
 $(SPADES_YAML_DONE):
 	$(call _start,$(SPADES_DIR))

@@ -1,55 +1,118 @@
-units=sgcc.mk
+units=sgcc_manager.mk sgcc.mk sgcc_export.mk
 $(call _register_module,sgcc,$(units),)
+
+SGCC_VER?=v1.08
 
 #####################################################################################################
 # basic input/output
 #####################################################################################################
 
-# contig fasta
-SGCC_INPUT_FASTQ?=$(PAIRED_R1)
+# base directory of input files
+SGCC_INPUT_DIR?=$(INPUT_DIR)
 
-# table with Meas_Type (MetaG|MetaT), lib, and subject.id
-SGCC_SAMPLE_TABLE_IN?=$(TEMPO_COHORT_SAMPLE_TABLE)
-SGCC_SAMPLE_TYPE?=MetaG
-
-# use only up to million reads from each library
-SGCC_FASTQ_MREADS?=2
-
-# output dir
-SGCC_TAG?=$(SGCC_SAMPLE_TYPE)_$(SGCC_FASTQ_MREADS)M
-SGCC_DIR?=$(BASE_OUTPUT_DIR)/sgcc/$(SGCC_TAG)
-
-# all lib ids
-SGCC_LIB_IDS_FILE?=$(SGCC_DIR)/lib_ids
-SGCC_IDS?=$(shell cat $(SGCC_LIB_IDS_FILE))
+SGCC_BASE_DIR?=$(OUTPUT_DIR)/sgcc/$(SGCC_VER)
 
 #####################################################################################################
-# docker wrapper
+# single lib params
 #####################################################################################################
 
-SOURMASH=dr run -i sourmash sourmash
+# sequencing lib identifer
+SGCC_LIB_ID?=specify_lib_id
+SGCC_R1_GZ_FN?=specify_fastq_R1
+SGCC_R2_GZ_FN?=specify_fastq_R2
+
+SGCC_INPUT_R1_GZ?=$(INPUT_DIR)/$(SGCC_R1_GZ_FN)
+SGCC_INPUT_R2_GZ?=$(INPUT_DIR)/$(SGCC_R2_GZ_FN)
+
+SGCC_LIBS_DIR?=$(SGCC_BASE_DIR)/libs
+SGCC_DIR?=$(SGCC_LIBS_DIR)/$(SGCC_LIB_ID)
+
+# manager over all libs works here
+SGCC_INFO_DIR?=$(SGCC_BASE_DIR)/info
+
+SGCC_LIB_INFO_DIR?=$(SGCC_DIR)/info
+SGCC_LIB_WORK_DIR?=$(SGCC_DIR)/work
 
 #####################################################################################################
-# get input sequence
+# multiple libs
 #####################################################################################################
 
-SGCC_INPUT_DIR?=$(SGCC_DIR)/input
-SGCC_FASTQ_COUNT=$(shell echo $(SGCC_FASTQ_MREADS)\*4000000 | bc)
-SGCC_FASTQ?=$(SGCC_INPUT_DIR)/$(LIB_ID).fq
+# raw seq table
+SGCC_INPUT_TABLE?=$(LIBS_INPUT_TABLE)
 
 #####################################################################################################
-# construct hash per library
+# table of libs
 #####################################################################################################
 
-SGCC_KMER_SIG?=31
+# script must contain function generate.sgcc.table that extracts fields:
+# SGCC_LIB_ID, SGCC_R1_GZ_FN, SGCC_R2_GZ_FN 
+SGCC_TABLE_SCRIPT?=$(LIBS_INPUT_SCRIPT)
 
-SGCC_SIG_DIR?=$(SGCC_DIR)/sig
-SGCC_SIG?=$(SGCC_SIG_DIR)/$(LIB_ID).sig
+SGCC_TABLE_DIR?=$(SGCC_BASE_DIR)/tables
+
+# with SGCC_LIB_ID, SGCC_R1_GZ_FN, SGCC_R2_GZ_FN
+SGCC_TABLE?=$(SGCC_TABLE_DIR)/libs.txt
+
+# with extra fields
+SGCC_TABLE_EXTRA?=$(SGCC_TABLE_DIR)/libs_extra.txt
+
+# VM disk size, can be defined in SGCC_TABLE
+SGCC_DISK_GB?=128
+
+#####################################################################################################
+# get input and compute signature
+#####################################################################################################
+
+# local copies 
+SGCC_SEQ_R1_GZ=$(SGCC_LIB_WORK_DIR)/R1.fastq.gz
+SGCC_SEQ_R2_GZ=$(SGCC_LIB_WORK_DIR)/R2.fastq.gz
+
+SGCC_SEQ_R1=$(SGCC_LIB_WORK_DIR)/R1.fastq
+SGCC_SEQ_R2=$(SGCC_LIB_WORK_DIR)/R2.fastq
+
+# fastq
+SGCC_FASTQ?=$(SGCC_LIB_WORK_DIR)/reads.fq
+
+# number of reads per lib
+SGCC_READ_COUNT_FILE?=$(SGCC_LIB_WORK_DIR)/read_count
+
+# random seed
+SGCC_SUBSAMPLE_SEED?=1
+
+SGCC_PIGZ_THREADS?=2
+
+#####################################################################################################
+# compute signature
+#####################################################################################################
+
+# use up to this number of reads from each library (in millions)
+SGCC_FASTQ_MREADS?=5
+
+# half from each read side 
+SGCC_FASTQ_COUNT=$(shell echo $(SGCC_FASTQ_MREADS)\*2000000 | bc)
+
+# sourmash installed via docker
+SOURMASH=sourmash
+
+# kmer size
+SGCC_KMER_SIG?=77
+
+SGCC_SIG?=$(SGCC_LIB_WORK_DIR)/sourmash.sig
 
 #####################################################################################################
 # compare
 #####################################################################################################
 
-SGCC_KMER_COMPARE?=31
+SGCC_COMPARE_DIR?=$(SGCC_BASE_DIR)/compare
 
-SGCC_COMPARE_TABLE=$(SGCC_DIR)/matrix.tab
+# matrix
+SGCC_COMPARE_TABLE=$(SGCC_COMPARE_DIR)/matrix.tab
+
+# summary of read counts
+SGCC_STATS_TABLE=$(SGCC_COMPARE_DIR)/read_counts.summary
+
+#####################################################################################################
+# export data
+#####################################################################################################
+
+SGCC_EXPORT_DIR?=$(BASE_EXPORT_DIR)/sgcc_$(SGCC_VER)

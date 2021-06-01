@@ -40,6 +40,7 @@ PARSE_QSUB_DIR?=$(MAP_TMPDIR)/map_parse
 
 # parse the bwa/sam output
 PARSE_SCRIPT?=$(_md)/pl/parse_bwa_sam.pl
+PARSE_DONE?=$(MAP_DIR)/.done_parse
 $(PARSE_DONE): $(MAP_DONE)
 	$(call _start,$(PARSE_DIR))
 	mkdir -p $(PARSE_STAT_DIR)
@@ -61,6 +62,7 @@ map_parse: $(PARSE_DONE)
 # verify parse using ref genome
 SHOULD_VERIFY?=F
 VERIFY_SCRIPT?=$(_md)/pl/verify_parse.pl
+VERIFY_PARSE_DONE?=$(MAP_DIR)/.done_verify
 $(VERIFY_PARSE_DONE): $(PARSE_DONE)
 	$(_start)
 ifeq ($(SHOULD_VERIFY),T)

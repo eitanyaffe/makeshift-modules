@@ -1,25 +1,31 @@
-
-HUMAN_SUFFIX='*clean*'
-DECONSEQ_DONE=$(LIB_DIR)/.done_deconseq
-$(DECONSEQ_DONE): $(SPLIT_DONE)
+DECONSEQ_DONE?=$(DECONSEQ_DIR)/.done
+$(DECONSEQ_DONE):
 	$(call _start,$(DECONSEQ_DIR))
-	@echo "================================================================================"
-	@echo "Removing human sequences (DeconSeq)"
-	@echo "================================================================================"
-	$(call _time,$(DECONSEQ_DIR),no_human) \
-		$(_R) $(_md)/R/distrib_remove_human.r distrib.remove.human \
-		deconseq=$(DECONSEQ_SCRIPT) \
-		dbs=$(DECONSEQ_DBS) \
-		wdir=$(DECONSEQ_BIN_DIR) \
-		identity=$(DECONSEQ_IDENTITY) \
-		coverage=$(DECONSEQ_COVERAGE) \
-		idir=$(DECONSEQ_IDIR) \
-		odir=$(DECONSEQ_DIR) \
-		qsub.dir=$(DECONSEQ_QSUB_DIR) \
-		threads=$(DECONSEQ_THREADS) \
-		batch.max.jobs=$(DECONSEQ_MAX_JOBS) \
-		total.max.jobs.fn=$(MAX_JOBS_FN) \
-		dtype=$(DTYPE) \
-		jobname=deconseq
+	cp $(DECONSEQ_BIN_DIR)/bwa64 /tmp
+	chmod +x /tmp/bwa64
+	export DECONSEQ_BIN_DIR=$(DECONSEQ_BIN_DIR); $(call _time,$(DECONSEQ_DIR),deconseq_R1) \
+		perl $(DECONSEQ_SCRIPT) \
+		-threads $(DECONSEQ_THREADS) \
+		-c $(DECONSEQ_COVERAGE) \
+		-i $(DECONSEQ_IDENTITY) \
+		-f $(DECONSEQ_IFN_R1) \
+		-id R1 \
+		-dbs hsref \
+		-out_dir $(DECONSEQ_DIR)
+	export DECONSEQ_BIN_DIR=$(DECONSEQ_BIN_DIR); $(call _time,$(DECONSEQ_DIR),deconseq_R2) \
+		perl $(DECONSEQ_SCRIPT) \
+		-threads $(DECONSEQ_THREADS) \
+		-c $(DECONSEQ_COVERAGE) \
+		-i $(DECONSEQ_IDENTITY) \
+		-f $(DECONSEQ_IFN_R2) \
+		-id R2 \
+		-dbs hsref \
+		-out_dir $(DECONSEQ_DIR)
 	$(_end_touch)
-deconseq: $(DECONSEQ_DONE)
+deconseq_base: $(DECONSEQ_DONE)
+
+$(PP_COUNT_DECONSEQ_CHUCK): $(DECONSEQ_DONE)
+	$(_start)
+	perl $(_md)/pl/count_fastq.pl $(DECONSEQ_DIR) '*' '*clean.fq' deconseq $@
+	$(_end)
+deconseq: $(PP_COUNT_DECONSEQ_CHUCK)

@@ -5,16 +5,17 @@ use warnings FATAL => qw(all);
 use File::Basename;
 
 if ($#ARGV == -1) {
-	print "usage: $0 <output dir> <max number of reads> <should trim> <trim read offset> <trim read length> <input fastq files>\n";
+	print "usage: $0 <output table> <output dir> <max number of reads> <should trim> <trim read offset> <trim read length> <input fastq files>\n";
 	exit 1;
 }
 
-my $odir = $ARGV[0];
-my $max_reads = $ARGV[1];
-my $trim = $ARGV[2] eq "T";
-my $offset = $ARGV[3];
-my $rlen = $ARGV[4];
-shift; shift; shift; shift; shift;
+my $ofn = $ARGV[0];
+my $odir = $ARGV[1];
+my $max_reads = $ARGV[2];
+my $trim = $ARGV[3] eq "T";
+my $offset = $ARGV[4];
+my $rlen = $ARGV[5];
+shift; shift; shift; shift; shift; shift;
 my @ifns = @ARGV;
 
 my %pfiles;
@@ -27,8 +28,13 @@ for my $ifn (@ifns) {
 
 my $oindex = 1;
 
-my $ofn1 = $odir."/R1_".$oindex.".fastq";
-my $ofn2 = $odir."/R2_".$oindex.".fastq";
+my $ofn1 = $odir."/".$oindex."_R1.fastq";
+my $ofn2 = $odir."/".$oindex."_R2.fastq";
+
+# chunk table
+print "output chunk table: $ofn\n";
+open(OUT, ">", $ofn) or die;
+print OUT "chunk\treads\n";
 
 open(OUT1, ">", $ofn1) or die;
 open(OUT2, ">", $ofn2) or die;
@@ -64,22 +70,30 @@ foreach my $fkey (keys %pfiles) {
 	    $read_count++;
 	
 	    if ($read_count >= $max_reads) {
+		print OUT "$oindex\t$read_count\n";
 		$read_count = 0;
 		close(OUT1);
 		close(OUT2);
 		$oindex++;
 		
-		$ofn1 = $odir."/R1_".$oindex.".fastq";
-		$ofn2 = $odir."/R2_".$oindex.".fastq";
+		$ofn1 = $odir."/".$oindex."_R1.fastq";
+		$ofn2 = $odir."/".$oindex."_R2.fastq";
 		
 		open(OUT1, ">", $ofn1) or die;
 		open(OUT2, ">", $ofn2) or die;
 		print "output file: $ofn1\n";
 		print "output file: $ofn2\n";
+
 	    }
 	}
     }
+    close(IN1);
+    close(IN2);
+    
 }
 
+print OUT "$oindex\t$read_count\n";
 close(OUT1);
 close(OUT2);
+
+close(OUT);

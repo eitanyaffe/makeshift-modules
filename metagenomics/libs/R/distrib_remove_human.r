@@ -35,11 +35,11 @@ distrib.remove.human=function(
           "perl %s -threads %d -c %d -i %d -f %s -id %s -dbs %s -out_dir %s > %s 2>&1",
           deconseq, threads, coverage, identity, ifn, files[i], dbs, odir, log.file)
 
-#      cat(sprintf("command: %s\n", command))
+      cat(sprintf("command: %s\n", command))
       commands = c(commands, command)
   }
-  distrib(commands, working.dir=wdir, qsub.dir=qsub.dir, jobname=jobname, batch.max.jobs=batch.max.jobs,
-	  total.max.jobs.fn=total.max.jobs.fn, sleep.time=10, rprofile=NULL,
-	  path=NULL, host.keys=NULL, retries=3, req.mem=NA, dtype=dtype)
+#  distrib(commands, working.dir=wdir, qsub.dir=qsub.dir, jobname=jobname, batch.max.jobs=batch.max.jobs,
+#	  total.max.jobs.fn=total.max.jobs.fn, sleep.time=10, rprofile=NULL,
+#	  path=NULL, host.keys=NULL, retries=3, req.mem=NA, dtype=dtype)
 }
 

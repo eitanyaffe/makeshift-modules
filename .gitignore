@@ -6,3 +6,5 @@ bu_metaBAT
 metagenomics/attempted.bwa.use.map
 *.o
 metagenomics/old.metaBAT
+.DS_Store
+bu_*

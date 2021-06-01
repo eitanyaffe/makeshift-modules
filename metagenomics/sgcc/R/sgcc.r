@@ -1,50 +1,39 @@
-make=function(ifn, type, target, is.dry)
+compare=function(binary, ifn, idir, wdir, kmer, ofn, ofn.stats)
 {
+    # collect signatures locally
     df = load.table(ifn)
-    df = df[df$Meas_Type == type,]
-    cat(sprintf("number of libraries: %d\n", dim(df)[1]))
+    system(paste("mkdir -p", wdir))
+    tfns =  paste0(wdir, "/", df$SGCC_LIB_ID, ".sig")
+
+    # verify files exist
+    missing.files = NULL
+    cat(sprintf("locating %d signature files under: %s\n", dim(df)[1], idir))
     for (i in 1:dim(df)[1]) {
-        lib.id = df$lib[i]
-        subject.id = df$subject.id[i]
-        command = sprintf("make %s LIB_ID=%s SUBJECT_ID=%s",
-            target, lib.id, subject.id)
-        if (is.dry) {
-            command = paste(command, "-n")
-        }
-        if (system(command) != 0)
-            stop(paste("error in command:", command))
+        fn = sprintf("%s/libs/%s/work/sourmash.sig", idir, df$SGCC_LIB_ID[i])
+        if (!file.exists(fn))
+            missing.files = c(missing.files, fn)
     }
-}
+    if (length(missing.files) > 0)
+        stop(sprintf("signature file missing: %d\nfiles: %s\n", length(missing.files), paste(missing.files, collapse=",")))
 
-extract.ids=function(ifn, type, ofn)
-{
-    df = load.table(ifn)
-    df = df[df$Meas_Type == type,]
+    # copy files
+    cat(sprintf("copying signature files: %d\n", dim(df)[1])) 
+    for (i in 1:dim(df)[1]) {
+        exec(sprintf("cp %s/libs/%s/work/sourmash.sig %s", idir, df$SGCC_LIB_ID[i], tfns[i]), verbose=F)
+    }
+    
+    wfn = paste0(wdir, "/table")
+    write.table(x=paste0(df$SGCC_LIB_ID, ".sig"), file=wfn, quote=F, row.names=F,col.names=F)
 
-    command = paste("echo", paste(df$lib, sep=" ", collapse=" "), " > ", ofn)
-    if (system(command) != 0)
-        stop(sprintf("command failed: %s", command))
-}
+    # compare sigs
+    exec(sprintf("cd %s && %s compare -k %d --from-file %s --csv %s",
+                      wdir, binary, kmer, wfn, ofn))
+    system(paste("rm -rf", wdir))
 
-compare.old=function(command.pre, ifn, type, ifn.template, id.template, kmer, ofn)
-{
-    df = load.table(ifn)
-    df = df[df$Meas_Type == type,]
-    ids = df$lib
-    fns = NULL
-    for (id in ids)
-        fns = c(fns, gsub(id.template, id, ifn.template))
-    command = sprintf("%s -k %d --csv %s %s",
-                      command.pre, kmer, ofn, paste(fns, collapse=" "))
-#    if (system(command) != 0)
-#        stop(sprintf("command failed: %s", command))
-}
-
-compare=function(command.pre, idir, kmer, ofn)
-{
-    command = sprintf("%s compare -k %d --traverse-directory --csv %s %s",
-                      paste(command.pre, collapse=" "), kmer, ofn, idir)
-    cat(sprintf("command: %s\n", command))
-    if (system(command) != 0)
-        stop(sprintf("command failed: %s", command))
+    rr.stats = NULL
+    for (i in 1:dim(df)[1]) {
+        xx = read.delim(sprintf("%s/libs/%s/work/read_count", idir, df$SGCC_LIB_ID[i]), header=F)
+        rr.stats = rbind(rr.stats, data.frame(id=xx[1,1], reads=sum(xx[,3]), bps=sum(xx[,4])))
+    }
+    save.table(rr.stats, ofn.stats)
 }

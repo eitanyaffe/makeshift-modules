@@ -2,71 +2,106 @@
 # register module
 #####################################################################################################
 
-units:=megahit.mk spades.mk
+units:=assembly_input.mk megahit.mk assembly_manager.mk assembly_stats.mk assembly_export.mk
 
 $(call _register_module,assembly,$(units),)
 
+ASSEMBLY_VER?=v1.01
+
 #####################################################################################################
-# general parameters
+# run specs
 #####################################################################################################
 
-# used to be 147 and 300
+# machine type overrides cpus/ram 
+ASSEMBLY_MACHINE?=n1-standard-64
+ASSEMBLY_THREADS?=64
+
+#ASSEMBLY_MACHINE?=n2d-highcpu-224
+#ASSEMBLY_MACHINE?=n2d-standard-128
+
+# for megahit
+
+# for uncompressing
+ASSEMBLY_PIGZ_THREADS?=4
+
+# special machine for input
+ASSEMBLY_INPUT_MACHINE?=e2-standard-4
+
+ASSEMBLY_DISK_GB?=128
+ASSEMBLY_DISK_TYPE?=pd-ssd
+
+#####################################################################################################
+# basic assembly input and params
+#####################################################################################################
+
 ASSEMBLY_MAX_KMER?=77
 ASSEMBLY_MIN_CONTIG?=200
-ASSEMBLY_TAG?=_$(ASSEMBLY_MAX_KMER)_$(ASSEMBLY_MIN_CONTIG)
+ASSEMBLY_TAG?=k77_200M
 
 ASSEMBLER?=megahit
 ASSEMBLY_ID?=assembly1
-ASSEMBLY_BASE_DIR?=$(OUTPUT_DIR)/assembly/$(ASSEMBLY_ID)
-ASSEMBLY_DIR?=$(ASSEMBLY_BASE_DIR)/$(ASSEMBLER)$(ASSEMBLY_TAG)
+ASSEMBLY_BASE_DIR?=$(OUTPUT_DIR)/assembly/$(ASSEMBLY_VER)
+ASSEMBLY_DIR?=$(ASSEMBLY_BASE_DIR)/$(ASSEMBLY_ID)/$(ASSEMBLY_TAG)
 
-# shortcuts
-MEGAHIT_DIR?=$(ASSEMBLY_DIR)
-SPADES_DIR?=$(ASSEMBLY_DIR)
+ASSEMBLY_FDIR?=$(OUTPUT_DIR)/figures/assembly
 
-# by defaulty all libs are used for the assebmly
-ASSEMBLY_LIB_IDS?=$(LIB_IDS)
+ASSEMBLY_INFO_DIR?=$(ASSEMBLY_DIR)/info
+ASSEMBLY_WORK_DIR?=$(ASSEMBLY_DIR)/work
 
-# use only files which match pattern
-ASSEMBLY_INPUT_NAME_PATTERN?=$(DECONSEQ_PATTERN)
-
-# command that cats the fastq files
-ASSEMBLY_INPUT_DIRS?=$(addsuffix /final,$(addprefix $(LIBS_DIR)/,$(ASSEMBLY_LIB_IDS)))
-ASSEMBLY_INPUT_R1?=$(addsuffix /R1.fastq,$(ASSEMBLY_INPUT_DIRS))
-ASSEMBLY_INPUT_R2?=$(addsuffix /R2.fastq,$(ASSEMBLY_INPUT_DIRS))
-ASSEMBLY_INPUT_FILES?=$(ASSEMBLY_INPUT_R1) $(ASSEMBLY_INPUT_R2)
-ASSEMBLY_INPUT_CMD=cat $(ASSEMBLY_INPUT_FILES)
-
-# output
-FULL_CONTIG_FILE?=$(ASSEMBLY_DIR)/contigs
-FULL_CONTIG_TABLE?=$(ASSEMBLY_DIR)/contig_table
-
-# select long contigs
-ASSEMBLY_MIN_LEN?=1000
-ASSEMBLY_CONTIG_FILE?=$(ASSEMBLY_DIR)/long_contigs
-ASSEMBLY_CONTIG_TABLE?=$(ASSEMBLY_DIR)/long_contig_table
+# by default all libs are used for the assebmly
+ASSEMBLY_LIB_IDS?=$(subst  $(__comma),$(__space),$(LIB_IDS))
 
 #####################################################################################################
-# spades.mk
+# input
 #####################################################################################################
 
-SPADES_BIN?=/home/eitany/work/download/SPAdes-3.12.0-Linux/bin/spades.py
+# files are copied here and decompressed
+ASSEMBLY_INPUT_DIR?=$(ASSEMBLY_DIR)/input
 
-SPADE_YAML?=$(SPADES_DIR)/input.yaml
+# single unified file
+ASSEMBLY_INPUT_BASE_FASTQ?=$(ASSEMBLY_INPUT_DIR)/raw_reads.fastq
 
-SPADE_THREADS?=40
+# normalize style
+# none: keep all reads
+# subsample: sub-sample input using a max number of reads
+# khmer: use normalize-by-median.py
+ASSEMBLY_INPUT_STYLE?=subsample
 
-# max mem in Gb
-SPADE_MEM?=500
+####################################
+# subsample params
+####################################
+
+ASSEMBLY_RANDOM_SEED?=1
+
+ASSEMBLY_NORM_MAX_READS?=200000000
+
+####################################
+# khmer params
+####################################
+
+# k-mer size to use
+ASSEMBLY_NORM_KSIZE?=31
+
+# when the median k-mer coverage level is above this number the read is not kept
+ASSEMBLY_NORM_CUTOFF?=20
+
+# maximum amount of memory to use for data structure
+ASSEMBLY_NORM_MEMORY?=10000000000
+
+# report file
+ASSEMBLY_NORM_REPORT?=$(ASSEMBLY_INPUT_DIR)/report
+
+# result
+ASSEMBLY_INPUT_FASTQ?=$(ASSEMBLY_INPUT_DIR)/reads.fastq
 
 #####################################################################################################
-# megahit.mk
+# megahit work
 #####################################################################################################
 
-#MEGAHIT_BIN?=/home/dethlefs/bin/megahit
-MEGAHIT_BIN?=sudo dr run -i vout/megahit:release-v1.2.9 megahit $@
+# megahit is installed in the gcp/containers/mdocker Dockerfile where MEGAHIT_BIN is set
+MEGAHIT_BIN?=megahit
 
-MEGAHIT_MEMORY_CAP?=0.5
+MEGAHIT_MEMORY_CAP?=0.9
 
 MEGAHIT_MIN_CONTIG_LENGTH?=$(ASSEMBLY_MIN_CONTIG)
 
@@ -77,4 +112,38 @@ MEGAHIT_KMER_STEP?=10
 # other parameters here:
 MEGAHIT_MISC?=--merge-level 20,0.95
 
-MEGAHIT_FASTG?=$(MEGAHIT_DIR)/k$(MEGAHIT_MAX_KMER).fastg
+# rsync megahit results in background to bucket (if running on GCP)
+MEGAHIT_RSYNC_WAIT_TIME?=20m
+
+# output
+FULL_CONTIG_FILE?=$(ASSEMBLY_WORK_DIR)/contigs
+FULL_CONTIG_TABLE?=$(ASSEMBLY_WORK_DIR)/contig_table
+
+# select long contigs
+ASSEMBLY_MIN_LEN?=1000
+ASSEMBLY_CONTIG_FILE?=$(ASSEMBLY_WORK_DIR)/long_contigs
+ASSEMBLY_CONTIG_TABLE?=$(ASSEMBLY_WORK_DIR)/long_contig_table
+
+# fastg of result
+MEGAHIT_FASTG?=$(ASSEMBLY_WORK_DIR)/k$(MEGAHIT_MAX_KMER).fastg
+
+#####################################################################################################
+# multiple assemblies
+#####################################################################################################
+
+ASSEMBLY_MULTI_LABEL?=default
+ASSEMBLY_MULTI_DIR?=$(ASSEMBLY_BASE_DIR)/multi/$(ASSEMBLY_MULTI_LABEL)
+ASSEMBLY_TABLE?=$(GROUPS_TABLE)
+
+#####################################################################################################
+# collect stats
+#####################################################################################################
+
+ASSEMBLY_MULTI_STATS_DIR?=$(ASSEMBLY_MULTI_DIR)/stats
+ASSEMBLY_STATS_TABLE?=$(ASSEMBLY_MULTI_STATS_DIR)/summary.txt
+
+#####################################################################################################
+# export data
+#####################################################################################################
+
+ASSEMBLY_EXPORT_DIR?=$(BASE_EXPORT_DIR)/assembly_$(ASSEMBLY_VER)

@@ -102,7 +102,7 @@ foreach my $id (keys %reads) {
 }
 
 print STDERR sprintf("total number of reads: %d\n", $count);
-print STDERR sprintf("paired reads: 2x%d=%d (%.1f%%)\n", $paired, $paired*2, 100*$paired/($count/2));
+print STDERR sprintf("paired reads: 2x%d=%d\n", $paired, $paired*2);
 
 print_hash($ofn_stats, %stats);
 
